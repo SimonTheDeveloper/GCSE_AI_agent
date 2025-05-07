@@ -1,0 +1,18 @@
+{
+    "webAddresses": {
+        "flightsApi": "http://localhost:8000/flights",
+        "anotherApi": "http://localhost:8000/another"
+    },
+    "environment": "development",
+    "featureFlags": {
+        "enableNewFeature": true
+    },
+    "defaultValues": {
+        "currency": "USD",
+        "language": "en"
+    },
+    "logging": {
+        "level": "debug",
+        "destination": "console"
+    }
+}

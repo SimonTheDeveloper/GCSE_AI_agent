@@ -1,0 +1,20 @@
+# Virtual environment
+.venv/
+venv/
+
+# Python compiled files
+*.pyc
+__pycache__/
+
+# PyCharm specific files
+.idea/
+
+# Node.js dependencies
+node_modules/
+
+# Environment variables
+.env
+
+.vs
+/infrastructure/cdk/cdk.out/
+

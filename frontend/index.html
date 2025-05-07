@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajaali Flights</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <link href="static/styles/tailwind.css" rel="stylesheet">
+    <link href="static/styles/styles.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="static/scripts.js" defer></script>
+</head>
+<body class="bg-gray-100 flex justify-center min-h-screen p-4">
+
+
+<div class="w-[744px] max-w-[744px] bg-white shadow-lg">
+    <nav class="bg-white shadow p-4 border-b border-gray-300">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <!-- Menu Icon (Hamburger) -->
+                <button class="flex flex-col justify-center items-center p-0 gap-1 w-[18px] h-[18px]">
+                    <span class="block w-4 h-0.5 bg-gray-800"></span>
+                    <span class="block w-4 h-0.5 bg-gray-800"></span>
+                    <span class="block w-4 h-0.5 bg-gray-800"></span>
+                </button>
+
+                <h1 class="font-roboto text-2xl font-medium text-gray-600">Ajaali
+                    Flights</h1>
+            </div>
+
+            <button class="flex justify-center items-center w-8 h-8 rounded-full bg-cover bg-center"
+                    style="background-image: url('/frontend/static/icons/user.png');">
+            </button>
+        </div>
+    </nav>
+
+    <div class="bg-white px-4 pb-4 space-y-2 shadow-md mt-6 mx-auto">
+        <div class="flex items-center space-x-3 w-full h-8">
+            <button class="text-[14px] flex items-center justify-center px-2 w-[133px] h-8 rounded">
+                <span class="material-icons text-gray-600">sync_alt</span>
+                <span class="text-gray-700 text-sm font-normal ml-1">Round trip</span>
+                <span class="material-icons text-gray-600 ml-auto">expand_more</span>
+            </button>
+
+            <button class="text-[14px] flex items-center justify-center px-2 w-[76px] h-8 rounded">
+                <span class="material-icons text-gray-600">person</span>
+                <span class="text-gray-700 text-sm font-normal ml-1">1</span>
+                <span class="material-icons text-gray-600 ml-auto">expand_more</span>
+            </button>
+
+            <button class="text-[14px] flex items-center justify-center px-2 w-[100px] h-8 rounded">
+                <span class="text-gray-700 text-sm font-normal">Economy</span>
+                <span class="material-icons text-gray-600 ml-auto">expand_more</span>
+            </button>
+        </div>
+
+        <div class="relative flex space-x-2 w-full h-14">
+            <div class="flex items-center px-6 w-1/2 h-full border border-gray-300 rounded">
+                <span class="material-icons text-gray-600">location_on</span>
+                <input type="text" class="ml-2 w-full text-gray-700 text-base font-normal focus:outline-none"
+                       placeholder="London">
+            </div>
+
+            <button class="text-[14px] absolute top-1/2 left-1/2 transform -translate-x-6 -translate-y-1/2 w-8 h-8 rounded-full border border-gray-300 bg-white flex items-center justify-center shadow-md">
+                <span class="material-icons text-gray-600">swap_horiz</span>
+            </button>
+
+            <div class="flex items-center px-6 w-1/2 h-full border border-gray-300 rounded">
+                <span class="material-icons text-gray-600">location_on</span>
+                <input type="text" class="ml-2 w-full text-gray-700 text-base font-normal focus:outline-none"
+                       placeholder="Amsterdam">
+            </div>
+        </div>
+
+        <div class="flex items-center w-full h-14 border border-gray-300 rounded">
+            <div class="flex items-center pl-4 w-1/2 h-full border-r border-gray-300">
+                <span class="material-icons text-gray-600">calendar_today</span>
+                <input type="text" class="ml-2 w-full text-gray-700 text-base font-normal focus:outline-none"
+                       placeholder="Thu 3 Oct">
+                <button class="w-8 h-full flex items-center justify-center" disabled>
+                    <span class="material-icons text-gray-400 opacity-50">chevron_left</span>
+                </button>
+                <button class="w-8 h-full flex items-center justify-center">
+                    <span class="material-icons text-gray-600">chevron_right</span>
+                </button>
+            </div>
+
+            <div class="w-px h-full bg-gray-300"></div>
+
+            <div class="flex items-center pl-4 w-1/2 h-full">
+                <span class="material-icons text-gray-600">calendar_today</span>
+                <input type="text" class="ml-2 w-full text-gray-700 text-base font-normal focus:outline-none"
+                       placeholder="Thu 10 Oct">
+                <button class="w-8 h-full flex items-center justify-center">
+                    <span class="material-icons text-gray-600">chevron_left</span>
+                </button>
+                <button class="w-8 h-full flex items-center justify-center">
+                    <span class="material-icons text-gray-600">chevron_right</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="relative mt-6 mx-auto">
+            <div class="flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-hide">
+                <button class="text-[14px] flex items-center justify-center gap-2 px-2 h-6 w-[106px] rounded-full text-blue-600 font-medium">
+                    <img src="static/icons/filters.png" alt="Filters Icon" class="w-4 h-4">
+                    <span>All filters</span>
+                </button>
+
+                <div x-data="{ showStopsPopup: false, selectedStops: 'Any number of stops', init() { /* Initialization code for stops popup */ } }"
+                     x-init="init">
+                    <button @click="showStopsPopup = !showStopsPopup"
+                            class="text-[14px] flex items-center justify-center px-4 h-8 rounded-lg border border-gray-300 text-gray-600 font-medium">
+                        <span>Stops</span>
+                        <span class="material-icons text-gray-500">expand_more</span>
+                    </button>
+
+                    <div x-show="showStopsPopup" @click.outside="showStopsPopup = false"
+                         class="absolute z-30 top-12 mt-2 w-64 p-4 bg-white border border-gray-300 rounded-lg shadow-md">
+                        <div class="text-[14px] flex justify-between items-center mb-2">
+                            <span class="font-semibold text-gray-800">Stops</span>
+                            <button @click="showStopsPopup = false" class="text-gray-500 hover:text-gray-700">
+                                <span class="material-icons">close</span>
+                            </button>
+                        </div>
+
+                        <div class="flex flex-col space-y-2">
+                            <label class="flex items-center space-x-2 h-12">
+                                <input type="radio" class="form-radio stops-radio" value="Any number of stops">
+                                <span>Any number of stops</span>
+                            </label>
+                            <label class="flex items-center space-x-2 h-12">
+                                <input type="radio" class="form-radio stops-radio" value="Non-stop only">
+                                <span>Non-stop only</span>
+                            </label>
+                            <label class="flex items-center space-x-2 h-12">
+                                <input type="radio" class="form-radio stops-radio" value="One stop or fewer">
+                                <span>One stop or fewer</span>
+                            </label>
+                            <label class="flex items-center space-x-2  h-12">
+                                <input type="radio" class="form-radio stops-radio" value="Two stops or fewer">
+                                <span>Two stops or fewer</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div x-data="{ showAirlinesPopup: false, selectedAirlines: [], init() { /* Initialization code for airlines popup */ } }"
+                     x-init="init">
+                    <button @click="showAirlinesPopup = !showAirlinesPopup"
+                            class="text-[14px] flex items-center justify-center gap-2 px-4 h-8 w-[98px] rounded-lg border border-gray-300 text-gray-600 font-medium">
+                        <span>Airlines</span>
+                        <span class="material-icons text-gray-500">expand_more</span>
+                    </button>
+
+                    <div x-show="showAirlinesPopup" @click.outside="showAirlinesPopup = false"
+                         class="absolute z-30 top-12 mt-2 w-64 p-4 bg-white border border-gray-300 rounded-lg shadow-md">
+
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-semibold text-gray-800">Airlines</span>
+                            <button @click="showAirlinesPopup = false" class="text-gray-500 hover:text-gray-700">
+                                <span class="material-icons">close</span>
+                            </button>
+                        </div>
+
+                        <div class="flex flex-col space-y-2">
+                            <label class="flex items-center space-x-2 h-12">
+                                <input type="checkbox" class="form-checkbox"
+                                       :checked="selectedAirlines.includes('Air France')"
+                                       @change="event.target.checked ? selectedAirlines.push('Air France') : selectedAirlines = selectedAirlines.filter(a => a !== 'Air France'); fetchFlights(selectedSortOrder, selectedAirlines, selectedStops)">
+                                <span>Air France</span>
+                            </label>
+                            <label class="flex items-center space-x-2 h-12">
+                                <input type="checkbox" class="form-checkbox airline-checkbox" value="British Airways">
+                                <span>British Airways</span>
+                            </label>
+                            <label class="flex items-center space-x-2 h-12">
+                                <input type="checkbox" class="form-checkbox airline-checkbox" value="EASYJET">
+                                <span>easyJet</span>
+                            </label>
+                            <label class="flex items-center space-x-2 h-12">
+                                <input type="checkbox" class="form-checkbox airline-checkbox" value="KLM">
+                                <span>KLM</span>
+                            </label>
+                            <label class="flex items-center space-x-2 h-12">
+                                <input type="checkbox" class="form-checkbox airline-checkbox" value="WIZZ AIR">
+                                <span>Wizz Air</span>
+                            </label>
+                        </div>
+
+                        <button @click="selectedAirlines = []; fetchFlights(selectedSortOrder, selectedAirlines, selectedStops)"
+                                class="mt-4 text-sm text-blue-600 hover:underline">
+                            Clear
+                        </button>
+                    </div>
+                </div>
+                <button class="text-[14px] flex items-center justify-center gap-2 px-4 h-8 w-[82px] rounded-lg border border-gray-300 text-gray-600 font-medium">
+                    <span>Bags</span>
+                    <span class="material-icons text-gray-500">expand_more</span>
+                </button>
+
+                <button class="text-[14px] flex items-center justify-center gap-2 px-4 h-8 w-[83px] rounded-lg border border-gray-300 text-gray-600 font-medium">
+                    <span>Price</span>
+                    <span class="material-icons text-gray-500">expand_more</span>
+                </button>
+
+                <button class="text-[14px] flex items-center justify-center gap-2 px-4 h-8 w-[90px] rounded-lg border border-gray-300 text-gray-600 font-medium">
+                    <span>Times</span>
+                    <span class="material-icons text-gray-500">expand_more</span>
+                </button>
+
+                <button class="text-[14px] flex items-center justify-center gap-2 px-4 h-8 w-[107px] rounded-lg border border-gray-300 text-gray-600 font-medium">
+                    <span>Emissions</span>
+                    <span class="material-icons text-gray-500">expand_more</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="mt-6 space-y-4 p-4">
+        <div class="flex flex-col gap-2 w-full">
+            <div class="flex items-center gap-4">
+                <h2 class="text-2xl font-medium leading-[23px] text-gray-800">Top departing options</h2>
+
+                <div x-data="{ showSortOrderPopup: false, selectedSortOrder: 'Top flights', init() { /* Initialization code for sort order popup */ } }"
+                     x-init="init"
+                     class="ml-auto">
+                    <button @click="showSortOrderPopup = !showSortOrderPopup"
+                            class="text-[14px] ml-auto flex items-center justify-center gap-2 px-4 h-8 w-[168px] rounded-full text-blue-600 font-medium">
+                        <span>Sort by: <span x-text="selectedSortOrder"></span></span>
+                        <span class="material-icons text-gray-500">expand_more</span>
+                    </button>
+
+                    <div x-show="showSortOrderPopup" @click.outside="showSortOrderPopup = false"
+                         class="absolute z-30 mt-2 w-64 p-4 bg-white border border-gray-300 rounded-lg shadow-md">
+
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-semibold text-gray-800">Sort by:</span>
+                            <button @click="showSortOrderPopup = false" class="text-gray-500 hover:text-gray-700">
+                                <span class="material-icons">close</span>
+                            </button>
+                        </div>
+
+                         <div class="flex flex-col space-y-2">
+            <label class="flex items-center space-x-2 h-12">
+                <input type="radio" class="form-radio sort-order-radio" value="Top flights" x-model="selectedSortOrder">
+                <span>Top flights</span>
+            </label>
+            <label class="flex items-center space-x-2 h-12">
+                <input type="radio" class="form-radio sort-order-radio" value="Price" x-model="selectedSortOrder">
+                <span>Price</span>
+            </label>
+            <label class="flex items-center space-x-2 h-12">
+                <input type="radio" class="form-radio sort-order-radio" value="Departure Time" x-model="selectedSortOrder">
+                <span>Departure Time</span>
+            </label>
+            <label class="flex items-center space-x-2 h-12">
+                <input type="radio" class="form-radio sort-order-radio" value="Arrival Time" x-model="selectedSortOrder">
+                <span>Arrival Time</span>
+            </label>
+            <label class="flex items-center space-x-2 h-12">
+                <input type="radio" class="form-radio sort-order-radio" value="Duration" x-model="selectedSortOrder">
+                <span>Duration</span>
+            </label>
+            <label class="flex items-center space-x-2 h-12">
+                <input type="radio" class="form-radio sort-order-radio" value="Emissions" x-model="selectedSortOrder">
+                <span>Emissions</span>
+            </label>
+        </div>
+                    </div>
+                </div>
+            </div>
+            <p class="w-[696px] h-8 font-roboto font-normal text-xs leading-4 text-gray-500 flex-none order-1 self-stretch flex-grow-0">
+                Ranked based on price and convenience. Prices include required taxes + fees for 1 adult. Optional
+                charges and <u>bag fees</u> may<br> apply. <u>Passenger assistance info.</u>
+            </p>
+        </div>
+
+        <div class="flex flex-col gap-0 border border-gray-300 rounded-lg overflow-hidden">
+
+            <div class="mt-6 space-y-4" id="flight-list">
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-6 space-y-4 p-4">
+        <div class="flex flex-col gap-2 w-full">
+            <div class="flex items-center gap-4">
+                <h2 class="text-2xl font-medium leading-[23px] text-gray-800">Other departing options</h2>
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-0 border border-gray-300 rounded-lg overflow-hidden">
+
+            <div class="mt-6 space-y-4" id="more-flights">
+            </div>
+        </div>
+    </div>
+
+
+    <script id="flight-template" type="text/template">
+        <div class="flex items-center gap-8 p-4 border-b border-gray-300">
+            <div class="w-[35px] h-[35px] flex justify-center items-center">
+                <img src="{{airline_logo}}" alt="Airline Logo" class="w-9 h-9">
+            </div>
+            <div class="flex flex-col flex-1">
+                <span class="text-base font-medium text-gray-800">{{departure_dt}} – {{arrival_dt}}</span>
+                <p class="text-xs text-gray-500">{{source}} – {{sink}}</p>
+                <p class="text-xs text-gray-500">{{number_of_stops}} • {{flight_duration}} •
+                    {{airline}}</p>
+
+            </div>
+            <div class="flex flex-col items-end">
+                <span class="text-base font-medium text-gray-800">£{{price}}</span>
+                <p class="text-xs text-gray-500">Round trip</p>
+                <p class="text-xs text-gray-500">+{{emissions}}% emissions</p>
+            </div>
+            <button class="ml-4 flex items-center justify-center w-12 h-12 rounded-full text-gray-600">
+                <span class="material-icons">expand_more</span>
+            </button>
+        </div>
+    </script>
+</div>
+
+</body>
+</html>
