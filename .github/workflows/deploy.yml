@@ -23,7 +23,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: arn:aws:iam::509616620028:role/GitHubActionsECRPushRole
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: eu-west-2
           role-session-name: github-actions-session
 
       - name: Set up Python and Node
