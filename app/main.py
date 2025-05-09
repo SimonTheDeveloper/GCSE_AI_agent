@@ -1,11 +1,12 @@
 import os
 from typing import List
 
+from . import database
 import boto3
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from . import schemas, database
+from . import schemas
 
 # Load environment variables
 load_dotenv()
@@ -33,6 +34,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/")
+def read_root():
+    return {"message": "Hello, World!"}
 
 @app.on_event("startup")
 async def startup():

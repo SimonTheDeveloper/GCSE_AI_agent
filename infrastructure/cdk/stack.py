@@ -1,14 +1,70 @@
-from aws_cdk import Stack
-import aws_cdk.aws_dynamodb as dynamodb
+from aws_cdk import (
+    Stack,
+    aws_ec2 as ec2,
+    aws_ecs as ecs,
+    aws_ecs_patterns as ecs_patterns,
+    aws_dynamodb as dynamodb,
+    aws_iam as iam,
+    aws_logs as logs,
+    CfnOutput
+)
 from constructs import Construct
-from dotenv import load_dotenv
+import os
 
-class AirlineTestStack(Stack):
-    def __init__(self, scope: Construct, id: str, **kwargs) -> None:
-        super().__init__(scope, id, **kwargs)
+class GcseAiStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
 
+        # VPC (2 AZs)
+        vpc = ec2.Vpc(self, "AppVpc", max_azs=2)
+
+        # ECS Cluster
+        cluster = ecs.Cluster(self, "AppCluster", vpc=vpc)
+
+        # DynamoDB Table
         table = dynamodb.Table(
-            self, "FlightsTable",
-            partition_key=dynamodb.Attribute(name="flight_id", type=dynamodb.AttributeType.STRING),
-            table_name="FlightsTable"  # Set custom table name
+            self, "student-progress",
+            table_name="student-progress",
+            partition_key=dynamodb.Attribute(name="student_id", type=dynamodb.AttributeType.STRING),
+            sort_key=dynamodb.Attribute(name="subject_topic", type=dynamodb.AttributeType.STRING),
+            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST
         )
+
+        # IAM Role for Task Execution
+        task_role = iam.Role(
+            self, "TaskExecutionRole",
+            assumed_by=iam.ServicePrincipal("ecs-tasks.amazonaws.com")
+        )
+        table.grant_read_write_data(task_role)
+
+        # Fargate Task Definition
+        task_definition = ecs.FargateTaskDefinition(
+            self, "AppTaskDef",
+            cpu=256,
+            memory_limit_mib=512,
+            task_role=task_role
+        )
+
+        container = task_definition.add_container(
+            "AppContainer",
+            image=ecs.ContainerImage.from_asset("./"),
+            logging=ecs.LogDriver.aws_logs(
+                stream_prefix="AppLogs",
+                log_retention=logs.RetentionDays.ONE_WEEK
+            )
+        )
+        container.add_port_mappings(ecs.PortMapping(container_port=80))
+
+        # Fargate Service behind Load Balancer
+        service = ecs_patterns.ApplicationLoadBalancedFargateService(
+            self, "AppFargateService",
+            cluster=cluster,
+            task_definition=task_definition,
+            public_load_balancer=True
+        )
+
+        # Output Load Balancer DNS
+        CfnOutput(self, "LoadBalancerURL",
+                  value=service.load_balancer.load_balancer_dns_name,
+                  description="Public URL for the FastAPI app",
+                  export_name="FastApiLoadBalancerUrl")
