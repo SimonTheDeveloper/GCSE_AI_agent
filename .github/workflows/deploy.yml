@@ -64,6 +64,17 @@ jobs:
           role-to-assume: arn:aws:iam::509616620028:role/GitHubActionsECRPushRole
           aws-region: eu-west-2
 
+      - name: Set up Python and Node
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry and Dependencies
+        run: |
+          pip install poetry
+          poetry config virtualenvs.create false
+          poetry install --only main
+
       - name: Install AWS CDK
         run: npm install -g aws-cdk
 
