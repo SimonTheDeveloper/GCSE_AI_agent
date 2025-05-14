@@ -3,6 +3,7 @@ name: CDK Deploy
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -55,7 +56,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: arn:aws:iam::<account-id>:role/<role-name>
+          role-to-assume: arn:aws:iam::509616620028:role/GitHubActionsECRPushRole
           aws-region: eu-west-2
 
       - name: Destroy CDK stack
