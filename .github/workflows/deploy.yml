@@ -7,6 +7,7 @@ on:
 
 jobs:
   deploy:
+    if: github.event_name != 'workflow_dispatch'  # Skip deploy if manually triggered
     runs-on: ubuntu-latest
 
     permissions:
@@ -62,6 +63,9 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::509616620028:role/GitHubActionsECRPushRole
           aws-region: eu-west-2
+
+      - name: Install AWS CDK
+        run: npm install -g aws-cdk
 
       - name: Destroy CDK stack
         run: cdk destroy --force --app "poetry run python3 infrastructure/cdk/app.py"
