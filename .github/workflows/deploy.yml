@@ -3,7 +3,7 @@ name: CDK Deploy
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:
+  workflow_dispatch:  # Allows manual triggering of the workflow
 
 jobs:
   deploy:
@@ -38,17 +38,21 @@ jobs:
           poetry install --only main
           npm install -g aws-cdk
 
-      - name: Debug OIDC Token
-        run: |
-          echo "OIDC Token:"
-          curl -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL"
-
       - name: Deploy CDK
         run: |
           cdk deploy --require-approval never --app "poetry run python3 infrastructure/cdk/app.py"
 
   destroy:
+    if: github.event_name == 'workflow_dispatch'  # Only run if manually triggered
     runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    env:
+      AWS_REGION: eu-west-2
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
