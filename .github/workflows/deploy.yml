@@ -3,11 +3,14 @@ name: CDK Deploy
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'infrastructure/cdk/**'  # Only trigger deploy if CDK files are changed
+      - '.github/workflows/deploy.yml'  # Trigger if the workflow file is changed
   workflow_dispatch:  # Allows manual triggering of the workflow
 
 jobs:
   deploy:
-    if: github.event_name != 'workflow_dispatch'  # Skip deploy if manually triggered
+    if: github.event_name == 'push' && contains(github.event.head_commit.message, '[deploy]')
     runs-on: ubuntu-latest
 
     permissions:
@@ -33,11 +36,44 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
       - run: |
           pip install poetry
           poetry config virtualenvs.create false
           poetry install --only main
           npm install -g aws-cdk
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm install
+
+      - name: Build React frontend
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Check for CDK changes
+        run: |
+          cdk diff --app "poetry run python3 infrastructure/cdk/app.py" || echo "No changes detected"
+
+      - name: Check CDK stack state
+        run: cdk diff --app "poetry run python3 infrastructure/cdk/app.py"
 
       - name: Deploy CDK
         run: |
@@ -68,6 +104,22 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
 
       - name: Install Poetry and Dependencies
         run: |

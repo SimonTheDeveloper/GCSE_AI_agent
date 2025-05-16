@@ -6,7 +6,9 @@ from aws_cdk import (
     aws_dynamodb as dynamodb,
     aws_iam as iam,
     aws_logs as logs,
-    CfnOutput
+    CfnOutput,
+    aws_s3 as s3,
+    aws_s3_deployment as s3deploy,
 )
 from constructs import Construct
 import os
@@ -63,8 +65,26 @@ class GcseAiStack(Stack):
             public_load_balancer=True
         )
 
+        # S3 bucket for React frontend hosting
+        frontend_bucket = s3.Bucket(
+            self, "FrontendBucket",
+            website_index_document="index.html",
+            website_error_document="index.html",
+            public_read_access=True,  # For public static hosting
+            removal_policy=RemovalPolicy.DESTROY  # Optional: delete bucket on stack destroy
+        )
+
+        # (Optional) Deploy local build folder to S3 on cdk deploy
+        s3deploy.BucketDeployment(
+            self, "DeployReactApp",
+            sources=[s3deploy.Source.asset("../frontend/build")],
+            destination_bucket=frontend_bucket,
+        )
+
         # Output Load Balancer DNS
         CfnOutput(self, "LoadBalancerURL",
                   value=service.load_balancer.load_balancer_dns_name,
                   description="Public URL for the FastAPI app",
                   export_name="FastApiLoadBalancerUrl")
+
+        CfnOutput(self, "FrontendBucketURL", value=frontend_bucket.bucket_website_url)
