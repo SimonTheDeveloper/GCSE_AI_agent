@@ -72,7 +72,7 @@ class GcseAiStack(Stack):
             website_index_document="index.html",
             website_error_document="index.html",
             public_read_access=True,
-            block_public_access=s3.BlockPublicAccess.NONE,  # <-- Add this line
+            block_public_access=s3.BlockPublicAccess.BLOCK_ACLS,  # Use BLOCK_ACLS instead of NONE
             removal_policy=RemovalPolicy.DESTROY
         )
 
