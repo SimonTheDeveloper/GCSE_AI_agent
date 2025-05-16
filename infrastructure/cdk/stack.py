@@ -71,8 +71,9 @@ class GcseAiStack(Stack):
             self, "FrontendBucket",
             website_index_document="index.html",
             website_error_document="index.html",
-            public_read_access=True,  # For public static hosting
-            removal_policy=RemovalPolicy.DESTROY  # Optional: delete bucket on stack destroy
+            public_read_access=True,
+            block_public_access=s3.BlockPublicAccess.NONE,  # <-- Add this line
+            removal_policy=RemovalPolicy.DESTROY
         )
 
         # (Optional) Deploy local build folder to S3 on cdk deploy
