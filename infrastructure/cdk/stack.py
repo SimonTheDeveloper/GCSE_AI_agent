@@ -79,7 +79,7 @@ class GcseAiStack(Stack):
         # (Optional) Deploy local build folder to S3 on cdk deploy
         s3deploy.BucketDeployment(
             self, "DeployReactApp",
-            sources=[s3deploy.Source.asset("../frontend/build")],
+            sources=[s3deploy.Source.asset("frontend/build")],
             destination_bucket=frontend_bucket,
         )
 
