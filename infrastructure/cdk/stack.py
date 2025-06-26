@@ -18,6 +18,10 @@ class GcseAiStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
+        # Read project-specific values from environment variables or use defaults
+        table_name = os.environ.get("DYNAMODB_TABLE_NAME", "student-progress")
+        bucket_name = os.environ.get("FRONTEND_BUCKET_NAME", "frontend-bucket")
+
         # VPC (2 AZs)
         vpc = ec2.Vpc(self, "AppVpc", max_azs=2)
 
@@ -27,7 +31,7 @@ class GcseAiStack(Stack):
         # DynamoDB Table
         table = dynamodb.Table(
             self, "student-progress",
-            table_name="student-progress",
+            table_name=table_name,
             partition_key=dynamodb.Attribute(name="student_id", type=dynamodb.AttributeType.STRING),
             sort_key=dynamodb.Attribute(name="subject_topic", type=dynamodb.AttributeType.STRING),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST
@@ -69,10 +73,11 @@ class GcseAiStack(Stack):
         # S3 bucket for React frontend hosting
         frontend_bucket = s3.Bucket(
             self, "FrontendBucket",
+            bucket_name=bucket_name,
             website_index_document="index.html",
             website_error_document="index.html",
             public_read_access=True,
-            block_public_access=s3.BlockPublicAccess.BLOCK_ACLS,  # Use BLOCK_ACLS instead of NONE
+            block_public_access=s3.BlockPublicAccess.BLOCK_ACLS,
             removal_policy=RemovalPolicy.DESTROY
         )
 

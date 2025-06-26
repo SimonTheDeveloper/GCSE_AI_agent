@@ -1,9 +1,9 @@
 [tool.poetry]
 name = "app"
 version = "0.1.0"
-description = "Backend application for the GCSE AI Agent"
-authors = ["Your Name <your.email@example.com>"]
-packages = [{ include = "app" }]
+description = ""
+authors = []
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.9"

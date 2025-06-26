@@ -1,0 +1,50 @@
+version: "3.8"
+services:
+  dynamodb:
+    image: amazon/dynamodb-local
+    ports:
+      - "8000:8000"
+    command: -jar DynamoDBLocal.jar -inMemory -sharedDb
+
+  dynamodb-init:
+    image: amazon/aws-cli
+    depends_on:
+      - dynamodb
+    entrypoint: >
+      sh -c "
+        sleep 5 &&
+        aws dynamodb create-table \
+          --table-name student-progress \
+          --attribute-definitions AttributeName=student_id,AttributeType=S AttributeName=subject_topic,AttributeType=S \
+          --key-schema AttributeName=student_id,KeyType=HASH AttributeName=subject_topic,KeyType=RANGE \
+          --provisioned-throughput ReadCapacityUnits=1,WriteCapacityUnits=1 \
+          --endpoint-url http://dynamodb:8000 \
+          --region us-west-2 || true
+      "
+    environment:
+      - AWS_ACCESS_KEY_ID=dummy
+      - AWS_SECRET_ACCESS_KEY=dummy
+      - AWS_DEFAULT_REGION=us-west-2
+
+  backend:
+    build: ./backend
+    environment:
+      AWS_ACCESS_KEY_ID: dummy
+      AWS_SECRET_ACCESS_KEY: dummy
+      AWS_DEFAULT_REGION: us-west-2
+      DYNAMODB_TABLE_NAME: student-progress
+      DYNAMODB_ENDPOINT_URL: http://dynamodb:8000
+    ports:
+      - "8001:8001"
+    depends_on:
+      - dynamodb
+      - dynamodb-init
+
+  frontend:
+    build: ./frontend
+    environment:
+      - REACT_APP_API_URL=http://backend:8001
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend

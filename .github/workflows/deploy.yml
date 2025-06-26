@@ -19,6 +19,9 @@ jobs:
 
     env:
       AWS_REGION: eu-west-2
+      DYNAMODB_TABLE_NAME: student-progress
+      FRONTEND_BUCKET_NAME: frontend-bucket
+      REACT_APP_API_URL: ${{ vars.REACT_APP_API_URL }}
 
     steps:
       - name: Checkout code
@@ -89,6 +92,8 @@ jobs:
 
     env:
       AWS_REGION: eu-west-2
+      DYNAMODB_TABLE_NAME: student-progress
+      FRONTEND_BUCKET_NAME: frontend-bucket
 
     steps:
       - name: Checkout code

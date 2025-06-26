@@ -1,12 +1,17 @@
 import os
 from typing import List
+from uuid import uuid4
 
-from . import database
+import database
 import boto3
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request, logger
 from fastapi.middleware.cors import CORSMiddleware
-from . import schemas
+import schemas
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
@@ -19,10 +24,10 @@ session = boto3.Session(
 )
 
 # Initialize DynamoDB resource
-dynamodb = session.resource('dynamodb')
+dynamodb = session.resource('dynamodb', endpoint_url=os.getenv("DYNAMODB_ENDPOINT_URL"))
 
 # Reference the DynamoDB table
-table = dynamodb.Table('FlightsTable')
+table = dynamodb.Table('student-progress')
 
 app = FastAPI()
 
@@ -51,3 +56,24 @@ async def shutdown():
 async def read_flights():
     response = table.scan()
     return response['Items']
+
+@app.get("/api/message")
+def get_message():
+    # For demo, use a fixed key
+    response = table.get_item(Key={"student_id": "demo", "subject_topic": "welcome"})
+    return {"message": response.get("Item", {}).get("text", "No message found.")}
+
+@app.post("/api/message")
+async def set_message(request: Request):
+    data = await request.json()
+    text = data.get("text")
+    logger.info(f"Received text: {text}")
+    if not text:
+        raise HTTPException(status_code=400, detail="Text is required")
+    table.put_item(Item={
+        "student_id": "demo",
+        "subject_topic": str(uuid4()),
+        "text": text
+    })
+    return {"status": "ok"}
+
