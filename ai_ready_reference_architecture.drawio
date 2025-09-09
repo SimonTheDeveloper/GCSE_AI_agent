@@ -1,0 +1,83 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="AI-Ready Reference Architecture">
+    <mxGraphModel dx="1600" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Clients -->
+        <mxCell id="10" value="Clients (Web App / React)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="100" y="50" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="11" value="Mobile / Browser" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="300" y="50" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="12" value="3rd Party Integrations" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="500" y="50" width="160" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- Ingress -->
+        <mxCell id="20" value="Ingress: ALB/API Gateway + WAF" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="250" y="150" width="220" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- App Tier -->
+        <mxCell id="30" value="App Tier (FastAPI on ECS Fargate)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="250" width="320" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="31" value="API Layer" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="30">
+          <mxGeometry x="10" y="10" width="90" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="32" value="Domain Services" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="30">
+          <mxGeometry x="110" y="10" width="90" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="33" value="Adapters/Ports" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="30">
+          <mxGeometry x="210" y="10" width="90" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- Data Tier -->
+        <mxCell id="40" value="DynamoDB (Single-Table)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="380" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="41" value="Vector Store (OpenSearch/pgvector)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="260" y="380" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="42" value="S3 Buckets (Docs/Prompts)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="500" y="380" width="160" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- AI Orchestrator -->
+        <mxCell id="50" value="AI Orchestrator Adapter" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="500" width="320" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- Providers -->
+        <mxCell id="60" value="Model Providers (OpenAI / Bedrock / Local)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="600" width="320" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- Async -->
+        <mxCell id="70" value="SQS Queue" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="500" width="120" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="71" value="Worker (Fargate/Lambda)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="600" width="160" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- Observability & Config -->
+        <mxCell id="80" value="Observability (CloudWatch)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="550" y="500" width="180" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="81" value="Config & Secrets (SSM)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="550" y="600" width="180" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- CI/CD -->
+        <mxCell id="90" value="CI/CD (GitHub Actions → ECR → ECS)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="260" y="720" width="240" height="60" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
