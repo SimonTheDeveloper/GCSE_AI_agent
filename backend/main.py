@@ -14,13 +14,14 @@ from db import (
     save_quiz_result, recent_wrong_cards,
 )
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 
 from schemas import (BootstrapReq, BootstrapRes, BreakdownItem, Card,
                         NextSteps, Question, QuizStartReq, QuizStartRes, QuizSubmitReq,
                         QuizSubmitRes, ReviewDueGroup, ReviewNextRes,
-                        SubjectWithTopics, TopicCardsRes, TopicStub, Answer)
+                        SubjectWithTopics, TopicCardsRes, TopicStub,
+                        HomeworkSubmitRes)
 
 
 logging.basicConfig(level=logging.INFO)
@@ -45,6 +46,7 @@ ALLOWED_ORIGINS = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=r"https?://(localhost|127\\.0\\.0\\.1)(:\\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -227,8 +229,17 @@ def quiz_submit(req: QuizSubmitReq):
         ))
     score = correct_count
 
-    # Persist final result
-    save_quiz_result(req.uid, req.quizId, sess.get("topicId", ""), breakdown, score, req.answers)
+    # Persist final result (serialize Pydantic models to plain dicts for DynamoDB)
+    breakdown_dicts = [b.dict() for b in breakdown]
+    answers_dicts = [a.dict() for a in req.answers]
+    save_quiz_result(
+        req.uid,
+        req.quizId,
+        sess.get("topicId", ""),
+        breakdown_dicts,
+        score,
+        answers_dicts,
+    )
 
     # Optionally delete session (cleanup)
     try:
@@ -254,5 +265,118 @@ def review_next(uid: str):
     due_list = [ReviewDueGroup(topicId=t, cardIds=sorted(list(cids))) for t, cids in topic_to_cards.items()]
     # If nothing due, return empty list
     return ReviewNextRes(due=due_list)
+
+
+# =========================
+# Homework submit (OCR + AI help)
+# =========================
+
+def _safe_import_tesseract():
+    try:
+        import pytesseract  # type: ignore
+        from PIL import Image  # type: ignore
+        return pytesseract, Image
+    except Exception:
+        return None, None
+
+
+def _safe_import_openai():
+    try:
+        import openai  # type: ignore
+        return openai
+    except Exception:
+        return None
+
+
+@app.post("/api/v1/homework/submit", response_model=HomeworkSubmitRes)
+async def homework_submit(
+    uid: str = Form(...),
+    question: str = Form(""),
+    files: list[UploadFile] = File(default_factory=list),
+):
+    # Validate uid exists (optional if anonymous allowed)
+    if not get_user_profile(uid):
+        raise HTTPException(status_code=404, detail="User not found")
+
+    warnings: list[str] = []
+    extracted_texts: list[str] = []
+    saved_names: list[str] = []
+
+    # OCR using pytesseract if available
+    pytesseract, Image = _safe_import_tesseract()
+    ocr_enabled = pytesseract is not None and Image is not None
+    if not ocr_enabled:
+        warnings.append("OCR not available: install pillow and pytesseract for image text extraction.")
+
+    for f in files or []:
+        try:
+            content = await f.read()
+            saved_names.append(f.filename or "uploaded")
+            if ocr_enabled and f.content_type and f.content_type.startswith("image/"):
+                from io import BytesIO
+                try:
+                    img = Image.open(BytesIO(content))
+                    text = pytesseract.image_to_string(img)
+                    if text and text.strip():
+                        extracted_texts.append(text.strip())
+                except Exception as e:
+                    warnings.append(f"OCR failed for {f.filename}: {e}")
+            # We could add PDF/text parsing here later
+        except Exception as e:
+            warnings.append(f"Failed to read file {f.filename}: {e}")
+
+    parts = []
+    if question and question.strip():
+        parts.append(question.strip())
+    parts.extend(extracted_texts)
+    combined = "\n\n".join(parts)
+
+    ai_help_text: str | None = None
+    if combined.strip():
+        # Optional AI assistance via OpenAI if configured
+        openai_api_key = os.getenv("OPENAI_API_KEY")
+        if openai_api_key:
+            openai = _safe_import_openai()
+            if openai is None:
+                warnings.append("AI help not available: install openai python package.")
+            else:
+                try:
+                    openai.api_key = openai_api_key
+                    # Use Chat Completions if available, fallback to Completions
+                    prompt = (
+                        "You are a helpful GCSE study assistant. Given the student's question and any OCR-extracted text, "
+                        "explain the steps to solve it clearly. If it is a multi-part question, break it down. "
+                        "Avoid giving the final answer immediately; guide the student with reasoning and hints.\n\n"
+                        f"Student input:\n{combined}\n\nResponse:"
+                    )
+                    try:
+                        # Modern API
+                        resp = openai.ChatCompletion.create(
+                            model=os.getenv("OPENAI_MODEL", "gpt-3.5-turbo"),
+                            messages=[{"role": "user", "content": prompt}],
+                            temperature=0.2,
+                        )
+                        ai_help_text = resp["choices"][0]["message"]["content"].strip()
+                    except Exception:
+                        # Legacy fallback
+                        resp = openai.Completion.create(
+                            model=os.getenv("OPENAI_MODEL", "text-davinci-003"),
+                            prompt=prompt,
+                            max_tokens=500,
+                            temperature=0.2,
+                        )
+                        ai_help_text = resp["choices"][0]["text"].strip()
+                except Exception as e:
+                    warnings.append(f"AI help failed: {e}")
+        else:
+            warnings.append("Set OPENAI_API_KEY to enable AI help.")
+
+    return HomeworkSubmitRes(
+        extractedText=extracted_texts,
+        combinedText=combined,
+        aiHelp=ai_help_text,
+        files=saved_names,
+        warnings=warnings,
+    )
 
 

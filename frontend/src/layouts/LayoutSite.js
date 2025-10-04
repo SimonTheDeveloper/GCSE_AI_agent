@@ -62,6 +62,7 @@ export default function LayoutSite({ children, showTopStrip = false }) {
                     </ul>
                   </li>
                   <li className={isActive('/review') ? 'active' : ''}><Link to="/review">Review</Link></li>
+                  <li className={isActive('/homework') ? 'active' : ''}><Link to="/homework">My homework</Link></li>
                   <li><a href="/theme/edule/contact.html">Contact</a></li>
                 </ul>
               </div>
@@ -99,6 +100,7 @@ export default function LayoutSite({ children, showTopStrip = false }) {
             <li className={isActive('/') ? 'active' : ''}><Link to="/" onClick={() => setMobileOpen(false)}>Home</Link></li>
             <li className={isActive('/subjects') ? 'active' : ''}><Link to="/subjects" onClick={() => setMobileOpen(false)}>Subjects</Link></li>
             <li className={isActive('/review') ? 'active' : ''}><Link to="/review" onClick={() => setMobileOpen(false)}>Review</Link></li>
+            <li className={isActive('/homework') ? 'active' : ''}><Link to="/homework" onClick={() => setMobileOpen(false)}>My homework</Link></li>
             <li className={isActive('/subjects/maths') ? 'active' : ''}><Link to="/subjects/maths" onClick={() => setMobileOpen(false)}>Maths</Link></li>
             <li className={isActive('/subjects/science') ? 'active' : ''}><Link to="/subjects/science" onClick={() => setMobileOpen(false)}>Science</Link></li>
             <li><a href="/theme/edule/contact.html" onClick={() => setMobileOpen(false)}>Contact</a></li>

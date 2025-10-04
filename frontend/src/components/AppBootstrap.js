@@ -10,7 +10,10 @@ export default function AppBootstrap({ children }) {
     (async () => {
       try {
         if (!uid) {
-          await bootstrap('browser-device');
+          const res = await bootstrap('browser-device');
+          try { localStorage.setItem('uid', res.uid); } catch {}
+        } else {
+          try { localStorage.setItem('uid', uid); } catch {}
         }
         if (!Object.keys(topicsBySubject || {}).length) {
           await fetchSubjects();

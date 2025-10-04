@@ -17,13 +17,16 @@ export default function SubjectsDetail() {
     })();
   }, [uid, topicsBySubject, bootstrap, fetchSubjects]);
 
-  const topics = topicsBySubject[subjectId] || [];
+  const subjectKeys = Object.keys(topicsBySubject);
+  const matchedKey = subjectKeys.find(k => k.toLowerCase() === (subjectId || '').toLowerCase());
+  const topics = matchedKey ? (topicsBySubject[matchedKey] || []) : [];
+  const title = (matchedKey || subjectId || '').replace(/\b\w/g, c => c.toUpperCase());
 
   return (
     <div className="section section-padding-02">
       <div className="container">
         <div className="section-title text-center">
-          <h2 className="title">{subjectId[0].toUpperCase() + subjectId.slice(1)}</h2>
+          <h2 className="title">{title}</h2>
           <p>Pick a topic to start a quick quiz.</p>
         </div>
         <div className="row g-4 justify-content-center">
@@ -37,7 +40,9 @@ export default function SubjectsDetail() {
                   </li>
                 ))}
                 {!topics.length && (
-                  <li>No topics found for this subject.</li>
+                  <li>
+                    No topics found for this subject. <Link to="/subjects">Back to all subjects</Link>
+                  </li>
                 )}
               </ul>
             </div>
