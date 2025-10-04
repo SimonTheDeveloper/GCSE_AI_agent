@@ -19,3 +19,5 @@ node_modules/
 /infrastructure/cdk/cdk.out/
 cdk.out/
 
+.dev-logs/backend.log
+.dev-logs/frontend.log
