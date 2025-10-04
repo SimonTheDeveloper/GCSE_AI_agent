@@ -9,7 +9,7 @@ AWS_REGION ?=
 DYNAMODB_TABLE_NAME ?=
 STACK_NAME ?= GcseAiStack
 
-.PHONY: help deploy destroy status seed frontend-build build-and-deploy outputs
+.PHONY: help deploy destroy status seed frontend-build build-and-deploy outputs dev dev-backend dev-frontend logs
 
 help:
 	@echo "Available targets:"
@@ -20,6 +20,7 @@ help:
 	@echo "  outputs              Show stack outputs (LB DNS, etc.)"
 	@echo "  seed                 Load seed JSON into DynamoDB table"
 	@echo "  destroy              Destroy CDK stack"
+	@echo "  dev                  Run backend (uvicorn) and frontend (npm start) locally"
 
 frontend-build:
 	@echo "[frontend] install + build"
@@ -38,7 +39,11 @@ status:
 # (s3deploy in the CDK stack).
 deploy:
 	@echo "[cdk] deploy $(STACK_NAME)"
-	@cd infrastructure/cdk && cdk deploy --require-approval never
+	@cd infrastructure/cdk && \
+	if [ ! -d .venv ]; then python3 -m venv .venv; fi && \
+	source .venv/bin/activate && \
+	pip install -U pip && pip install -r requirements.txt && \
+	cdk deploy --require-approval never
 
 build-and-deploy: frontend-build deploy
 	@echo "[done] build-and-deploy complete"
@@ -55,3 +60,20 @@ seed:
 destroy:
 	@echo "[cdk] destroy $(STACK_NAME)"
 	@cd infrastructure/cdk && cdk destroy -f
+
+dev:
+	@echo "[dev] starting backend and frontend locally (no Docker)"
+	@./scripts/dev.sh
+
+dev-backend:
+	@echo "[dev] starting backend locally (no Docker)"
+	@BACKEND_ONLY=1 ./scripts/dev.sh
+
+dev-frontend:
+	@echo "[dev] starting frontend locally (no Docker)"
+	@FRONTEND_ONLY=1 ./scripts/dev.sh
+
+logs:
+	@echo "Tailing logs (Ctrl+C to stop)..."
+	@mkdir -p .dev-logs
+	@tail -f .dev-logs/backend.log .dev-logs/frontend.log

@@ -5,10 +5,14 @@ from datetime import datetime, timezone
 from typing import List
 from uuid import uuid4
 from dotenv import load_dotenv
-import boto3
-import database
+import db
 
-from boto3.dynamodb.conditions import Key
+from db import (
+    get_user_profile, put_user_profile, get_uid_by_device,
+    list_topics_grouped, list_cards_for_topic,
+    save_quiz_session, get_quiz_session, delete_quiz_session,
+    save_quiz_result, recent_wrong_cards,
+)
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,20 +32,6 @@ load_dotenv()
 AWS_REGION = os.getenv("AWS_REGION")
 TABLE_NAME = os.getenv("DYNAMODB_TABLE_NAME", "gcse_app")
 GSI1_NAME = os.getenv("DYNAMODB_GSI1", "GSI1")
-
-# Initialize a session using Amazon DynamoDB (credentials resolved by task role in ECS)
-session = boto3.Session(region_name=AWS_REGION)
-
-# Initialize DynamoDB resource (allow optional local override)
-endpoint_override = os.getenv("DYNAMODB_ENDPOINT_URL")
-dynamodb = session.resource('dynamodb', endpoint_url=endpoint_override) if endpoint_override else session.resource('dynamodb')
-
-# Reference the DynamoDB table
-try:
-    table = dynamodb.Table(TABLE_NAME)
-except Exception as e:
-    logger.error(f"Failed to reference table {TABLE_NAME}: {e}")
-    raise
 
 app = FastAPI()
 
@@ -70,15 +60,7 @@ def read_root():
     '''Root endpoint.'''
     return {"message": "Hello, World!", "table": TABLE_NAME}
 
-@app.on_event("startup")
-async def startup():
-    '''Startup event to connect to the database.'''
-    await database.connect()
-
-@app.on_event("shutdown")
-async def shutdown():
-    '''Shutdown event to disconnect from the database.'''
-    await database.disconnect()
+# No explicit startup/shutdown needed for boto3-backed database module
 
 # Simple message entity using single-table pattern
 # PK = MSG#demo, SK = WELCOME (static demo example)
@@ -89,7 +71,7 @@ SK_CONST = "WELCOME"
 def get_message():
     '''Get the demo message.'''
     try:
-        response = table.get_item(Key={"PK": PK_CONST, "SK": SK_CONST})
+        response = db.table().get_item(Key={"PK": PK_CONST, "SK": SK_CONST})
     except Exception as e:
         logger.exception("DynamoDB get_item failed")
         raise HTTPException(status_code=500, detail="Internal error") from e
@@ -112,7 +94,7 @@ async def set_message(request: Request):
         "GSI1SK": f"{PK_CONST}#{SK_CONST}",
     }
     try:
-        table.put_item(Item=item)
+        db.table().put_item(Item=item)
     except Exception as e:
         logger.exception("DynamoDB put_item failed")
         raise HTTPException(status_code=500, detail="Failed to save message") from e
@@ -124,99 +106,14 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def ddb_query_all(**kwargs) -> List[dict]:
-    '''Helper to perform DynamoDB query and handle pagination, returning all items.'''
-    items: List[dict] = []
-    resp = table.query(**kwargs)
-    items.extend(resp.get("Items", []))
-    while "LastEvaluatedKey" in resp:
-        resp = table.query(ExclusiveStartKey=resp["LastEvaluatedKey"], **kwargs)
-        items.extend(resp.get("Items", []))
-    return items
+# DynamoDB access is handled by the database module
 
-def get_user_profile(uid: str) -> dict | None:
-    '''Fetch user profile by uid.'''
-    r = table.get_item(Key={"PK": f"USER#{uid}", "SK": "PROFILE"})
-    return r.get("Item")
-
-def put_user_profile(uid: str, device_id: str | None) -> None:
-    '''Create user profile and optionally link device ID.'''
-    table.put_item(Item={
-        "PK": f"USER#{uid}",
-        "SK": "PROFILE",
-        "Type": "User",
-        "deviceId": device_id,
-        "createdAt": now_iso(),
-    })
-    if device_id:
-        # Link device -> user for future bootstrap lookups
-        table.put_item(Item={
-            "PK": f"DEVICE#{device_id}",
-            "SK": "USER_LINK",
-            "Type": "DeviceLink",
-            "uid": uid,
-            "linkedAt": now_iso(),
-        })
-
-def get_uid_by_device(device_id: str) -> str | None:
-    '''Lookup uid by device ID.'''
-    r = table.get_item(Key={"PK": f"DEVICE#{device_id}", "SK": "USER_LINK"})
-    item = r.get("Item")
-    return item.get("uid") if item else None
-
-
-def list_all_topics_grouped() -> List[SubjectWithTopics]:
-    '''List all topics grouped by subject.'''
-    # TopicMeta items are on GSI1 with:
-    #   GSI1PK = "TOPIC_LIST", GSI1SK = "<subject>#<sort>"
-    items = ddb_query_all(
-        IndexName=GSI1_NAME,
-        KeyConditionExpression=Key("GSI1PK").eq("TOPIC_LIST")
-    )
-    subjects: dict[str, List[TopicStub]] = {}
-    for it in items:
-        if it.get("Type") != "TopicMeta":
-            continue
-        subject = it["subject"]
-        topic_id = it["SK"].split("#", 1)[-1]  # SK = "TOPIC#<topicId>"
-        subjects.setdefault(subject, []).append(TopicStub(
-            id=topic_id,
-            title=it.get("title", topic_id),
-            estMinutes=int(it.get("estMinutes", it.get("estimatedMinutes", 10)))
-        ))
-    # Optional: keep deterministic order
-    out = []
-    for subject, topics in subjects.items():
-        topics.sort(key=lambda t: t.title.lower())
-        out.append(SubjectWithTopics(subject=subject, topics=topics))
-    out.sort(key=lambda s: s.subject.lower())
-    return out
-
-
-def list_cards_for_topic(topic_id: str) -> List[Card]:
-    '''List all cards for a given topic ID.'''
-    # RevCard: PK=CONTENT#<topicId>, SK=CARD#<cardId>
-    # Also on GSI1: GSI1PK=TOPIC#<topicId>, GSI1SK=CARD#<cardId>
-    items = ddb_query_all(
-        IndexName=GSI1_NAME,
-        KeyConditionExpression=Key("GSI1PK").eq(f"TOPIC#{topic_id}") & Key("GSI1SK").begins_with("CARD#")
-    )
-    cards: List[Card] = []
-    for it in items:
-        if it.get("Type") != "RevCard":
-            continue
-        card_id = it["SK"].split("#", 1)[-1]
-        cards.append(Card(
-            id=card_id,
-            front=it.get("front", ""),
-            back=it.get("back", ""),
-            tag=it.get("difficultyTag")
-        ))
-    return cards
 
 def create_quiz_session(uid: str, topic_id: str, num_questions: int) -> QuizStartRes:
     '''Create a new quiz session for the user on the given topic.'''
-    cards = list_cards_for_topic(topic_id)
+    # database.list_cards_for_topic returns list[dict]; convert to Card models
+    card_dicts = list_cards_for_topic(topic_id)
+    cards = [Card(**c) for c in card_dicts]
     if not cards:
         raise HTTPException(status_code=404, detail="No cards for topic")
     k = min(num_questions, len(cards))
@@ -240,65 +137,17 @@ def create_quiz_session(uid: str, topic_id: str, num_questions: int) -> QuizStar
 
     quiz_id = str(uuid4())
     # Persist session so grading uses the same choices/correctIndex
-    session_item = {
-        "PK": f"USER#{uid}",
-        "SK": f"QUIZ#{quiz_id}#SESSION",
-        "Type": "QuizSession",
-        "topicId": topic_id,
-        "createdAt": now_iso(),
-        # Pydantic v1 compatibility: use .dict() instead of .model_dump()
-        "questions": [q.dict() for q in questions],
-        "GSI1PK": f"QUIZ#{quiz_id}",
-        "GSI1SK": f"USER#{uid}",
-    }
-    table.put_item(Item=session_item)
+    save_quiz_session(uid, quiz_id, topic_id, [q.dict() for q in questions])
     return QuizStartRes(quizId=quiz_id, topicId=topic_id, questions=questions)
 
 
 def load_quiz_session(uid: str, quiz_id: str) -> dict:
     '''Load an existing quiz session for grading.'''
-    r = table.get_item(Key={"PK": f"USER#{uid}", "SK": f"QUIZ#{quiz_id}#SESSION"})
-    item = r.get("Item")
+    item = get_quiz_session(uid, quiz_id)
     if not item:
         raise HTTPException(status_code=404, detail="Quiz session not found")
     return item
 
-def save_quiz_result(uid: str, quiz_id: str, topic_id: str, breakdown: List[BreakdownItem], score: int, answers: List[Answer]) -> None:
-    '''Save the final quiz result.'''
-    item = {
-        "PK": f"USER#{uid}",
-        "SK": f"QUIZ#{quiz_id}",
-        "Type": "QuizResult",
-        "topicId": topic_id,
-        "completedAt": now_iso(),
-        "score": score,
-        # Pydantic v1 compatibility: use .dict()
-        "breakdown": [b.dict() for b in breakdown],
-        "answers": [a.dict() for a in answers],
-        "GSI1PK": f"QUIZ#{quiz_id}",
-        "GSI1SK": f"USER#{uid}",
-    }
-    table.put_item(Item=item)
-
-def recent_wrong_cards(uid: str, limit_results: int = 10) -> dict[str, set[str]]:
-    '''Fetch recent quiz results and return a mapping of topicId -> set of cardIds that were answered incorrectly.'''
-    # Query recent quiz results by SK prefix
-    resp = table.query(
-        KeyConditionExpression=Key("PK").eq(f"USER#{uid}") & Key("SK").begins_with("QUIZ#"),
-        ScanIndexForward=False,  # newest first
-        Limit=limit_results
-    )
-    topic_to_cards: dict[str, set[str]] = {}
-    for it in resp.get("Items", []):
-        if it.get("Type") != "QuizResult":
-            continue
-        topic_id = it.get("topicId")
-        for b in it.get("breakdown", []):
-            if not b.get("correct"):
-                qid = b.get("questionId")
-                if topic_id and qid:
-                    topic_to_cards.setdefault(topic_id, set()).add(qid)
-    return topic_to_cards
 
 # =========================
 # API v1 routes
@@ -321,7 +170,8 @@ def bootstrap_user(req: BootstrapReq):
 def get_subjects():
     '''List all subjects with their topics.'''
     try:
-        return list_all_topics_grouped()
+        grouped = list_topics_grouped()
+        return [SubjectWithTopics(subject=g["subject"], topics=[TopicStub(**t) for t in g["topics"]]) for g in grouped]
     except Exception as e:
         logger.exception("Failed to list subjects")
         raise HTTPException(status_code=500, detail="Failed to list subjects") from e
@@ -382,7 +232,7 @@ def quiz_submit(req: QuizSubmitReq):
 
     # Optionally delete session (cleanup)
     try:
-        table.delete_item(Key={"PK": f"USER#{req.uid}", "SK": f"QUIZ#{req.quizId}#SESSION"})
+        delete_quiz_session(req.uid, req.quizId)
     except Exception:
         pass
 

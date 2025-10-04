@@ -1,0 +1,880 @@
+[backend] INFO:     Will watch for changes in these directories: ['/Users/simonneumann/code/GCSE_AI_agent/backend']
+[backend] INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+[backend] INFO:     Started reloader process [9270] using StatReload
+[backend] Process SpawnProcess-1:
+[backend] Traceback (most recent call last):
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+[backend]     self.run()
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 108, in run
+[backend]     self._target(*self._args, **self._kwargs)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+[backend]     target(sockets=sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 67, in run
+[backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_compat.py", line 23, in asyncio_run
+[backend]     return runner.run(main)
+[backend]            ^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/runners.py", line 118, in run
+[backend]     return self._loop.run_until_complete(task)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/base_events.py", line 653, in run_until_complete
+[backend]     return future.result()
+[backend]            ^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 71, in serve
+[backend]     await self._serve(sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 78, in _serve
+[backend]     config.load()
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/config.py", line 438, in load
+[backend]     self.loaded_app = import_from_string(self.app)
+[backend]                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 22, in import_from_string
+[backend]     raise exc from None
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+[backend]     module = importlib.import_module(module_str)
+[backend]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/importlib/__init__.py", line 126, in import_module
+[backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "<frozen importlib._bootstrap>", line 1206, in _gcd_import
+[backend]   File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+[backend]   File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+[backend]   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+[backend]   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+[backend]   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/main.py", line 9, in <module>
+[backend]     import database
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/database.py", line 1, in <module>
+[backend]     import databases
+[backend] ModuleNotFoundError: No module named 'databases'
+[backend] INFO:     Stopping reloader process [9270]
+[backend] INFO:     Will watch for changes in these directories: ['/Users/simonneumann/code/GCSE_AI_agent/backend']
+[backend] INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+[backend] INFO:     Started reloader process [10112] using StatReload
+[backend] Process SpawnProcess-1:
+[backend] Traceback (most recent call last):
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+[backend]     self.run()
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 108, in run
+[backend]     self._target(*self._args, **self._kwargs)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+[backend]     target(sockets=sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 67, in run
+[backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_compat.py", line 23, in asyncio_run
+[backend]     return runner.run(main)
+[backend]            ^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/runners.py", line 118, in run
+[backend]     return self._loop.run_until_complete(task)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/base_events.py", line 653, in run_until_complete
+[backend]     return future.result()
+[backend]            ^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 71, in serve
+[backend]     await self._serve(sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 78, in _serve
+[backend]     config.load()
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/config.py", line 438, in load
+[backend]     self.loaded_app = import_from_string(self.app)
+[backend]                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 22, in import_from_string
+[backend]     raise exc from None
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+[backend]     module = importlib.import_module(module_str)
+[backend]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/importlib/__init__.py", line 126, in import_module
+[backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "<frozen importlib._bootstrap>", line 1206, in _gcd_import
+[backend]   File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+[backend]   File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+[backend]   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+[backend]   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+[backend]   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/main.py", line 9, in <module>
+[backend]     import database
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/database.py", line 1, in <module>
+[backend]     import databases
+[backend] ModuleNotFoundError: No module named 'databases'
+[backend] WARNING:  StatReload detected changes in 'database.py'. Reloading...
+[backend] Process SpawnProcess-2:
+[backend] Traceback (most recent call last):
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+[backend]     self.run()
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 108, in run
+[backend]     self._target(*self._args, **self._kwargs)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+[backend]     target(sockets=sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 67, in run
+[backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_compat.py", line 23, in asyncio_run
+[backend]     return runner.run(main)
+[backend]            ^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/runners.py", line 118, in run
+[backend]     return self._loop.run_until_complete(task)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/base_events.py", line 653, in run_until_complete
+[backend]     return future.result()
+[backend]            ^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 71, in serve
+[backend]     await self._serve(sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 78, in _serve
+[backend]     config.load()
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/config.py", line 438, in load
+[backend]     self.loaded_app = import_from_string(self.app)
+[backend]                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 22, in import_from_string
+[backend]     raise exc from None
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+[backend]     module = importlib.import_module(module_str)
+[backend]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/importlib/__init__.py", line 126, in import_module
+[backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "<frozen importlib._bootstrap>", line 1206, in _gcd_import
+[backend]   File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+[backend]   File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+[backend]   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+[backend]   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+[backend]   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/main.py", line 9, in <module>
+[backend]     import database
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/database.py", line 6, in <module>
+[backend]     import databases
+[backend] ModuleNotFoundError: No module named 'databases'
+[backend] WARNING:  StatReload detected changes in 'database.py'. Reloading...
+[backend] Process SpawnProcess-3:
+[backend] Traceback (most recent call last):
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+[backend]     self.run()
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 108, in run
+[backend]     self._target(*self._args, **self._kwargs)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+[backend]     target(sockets=sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 67, in run
+[backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_compat.py", line 23, in asyncio_run
+[backend]     return runner.run(main)
+[backend]            ^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/runners.py", line 118, in run
+[backend]     return self._loop.run_until_complete(task)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/base_events.py", line 653, in run_until_complete
+[backend]     return future.result()
+[backend]            ^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 71, in serve
+[backend]     await self._serve(sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 78, in _serve
+[backend]     config.load()
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/config.py", line 438, in load
+[backend]     self.loaded_app = import_from_string(self.app)
+[backend]                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 22, in import_from_string
+[backend]     raise exc from None
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+[backend]     module = importlib.import_module(module_str)
+[backend]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/importlib/__init__.py", line 126, in import_module
+[backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "<frozen importlib._bootstrap>", line 1206, in _gcd_import
+[backend]   File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+[backend]   File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+[backend]   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+[backend]   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+[backend]   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/main.py", line 9, in <module>
+[backend]     import database
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/database.py", line 6, in <module>
+[backend]     import databases
+[backend] ModuleNotFoundError: No module named 'databases'
+[backend] WARNING:  StatReload detected changes in 'main.py'. Reloading...
+[backend] Process SpawnProcess-4:
+[backend] Traceback (most recent call last):
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+[backend]     self.run()
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 108, in run
+[backend]     self._target(*self._args, **self._kwargs)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+[backend]     target(sockets=sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 67, in run
+[backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_compat.py", line 23, in asyncio_run
+[backend]     return runner.run(main)
+[backend]            ^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/runners.py", line 118, in run
+[backend]     return self._loop.run_until_complete(task)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/base_events.py", line 653, in run_until_complete
+[backend]     return future.result()
+[backend]            ^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 71, in serve
+[backend]     await self._serve(sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 78, in _serve
+[backend]     config.load()
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/config.py", line 438, in load
+[backend]     self.loaded_app = import_from_string(self.app)
+[backend]                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 22, in import_from_string
+[backend]     raise exc from None
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+[backend]     module = importlib.import_module(module_str)
+[backend]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/importlib/__init__.py", line 126, in import_module
+[backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "<frozen importlib._bootstrap>", line 1206, in _gcd_import
+[backend]   File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+[backend]   File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+[backend]   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+[backend]   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+[backend]   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/main.py", line 9, in <module>
+[backend]     import database
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/database.py", line 6, in <module>
+[backend]     import databases
+[backend] ModuleNotFoundError: No module named 'databases'
+[backend] WARNING:  StatReload detected changes in 'main.py'. Reloading...
+[backend] Process SpawnProcess-5:
+[backend] Traceback (most recent call last):
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+[backend]     self.run()
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 108, in run
+[backend]     self._target(*self._args, **self._kwargs)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+[backend]     target(sockets=sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 67, in run
+[backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_compat.py", line 23, in asyncio_run
+[backend]     return runner.run(main)
+[backend]            ^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/runners.py", line 118, in run
+[backend]     return self._loop.run_until_complete(task)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/base_events.py", line 653, in run_until_complete
+[backend]     return future.result()
+[backend]            ^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 71, in serve
+[backend]     await self._serve(sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 78, in _serve
+[backend]     config.load()
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/config.py", line 438, in load
+[backend]     self.loaded_app = import_from_string(self.app)
+[backend]                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 22, in import_from_string
+[backend]     raise exc from None
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+[backend]     module = importlib.import_module(module_str)
+[backend]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/importlib/__init__.py", line 126, in import_module
+[backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "<frozen importlib._bootstrap>", line 1206, in _gcd_import
+[backend]   File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+[backend]   File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+[backend]   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+[backend]   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+[backend]   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/main.py", line 9, in <module>
+[backend]     import database
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/database.py", line 6, in <module>
+[backend]     import databases
+[backend] ModuleNotFoundError: No module named 'databases'
+[backend] WARNING:  StatReload detected changes in 'main.py'. Reloading...
+[backend] Process SpawnProcess-6:
+[backend] Traceback (most recent call last):
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+[backend]     self.run()
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 108, in run
+[backend]     self._target(*self._args, **self._kwargs)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+[backend]     target(sockets=sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 67, in run
+[backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_compat.py", line 23, in asyncio_run
+[backend]     return runner.run(main)
+[backend]            ^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/runners.py", line 118, in run
+[backend]     return self._loop.run_until_complete(task)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/base_events.py", line 653, in run_until_complete
+[backend]     return future.result()
+[backend]            ^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 71, in serve
+[backend]     await self._serve(sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 78, in _serve
+[backend]     config.load()
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/config.py", line 438, in load
+[backend]     self.loaded_app = import_from_string(self.app)
+[backend]                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 22, in import_from_string
+[backend]     raise exc from None
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+[backend]     module = importlib.import_module(module_str)
+[backend]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/importlib/__init__.py", line 126, in import_module
+[backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "<frozen importlib._bootstrap>", line 1206, in _gcd_import
+[backend]   File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+[backend]   File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+[backend]   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+[backend]   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+[backend]   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/main.py", line 9, in <module>
+[backend]     import database
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/database.py", line 6, in <module>
+[backend]     import databases
+[backend] ModuleNotFoundError: No module named 'databases'
+[backend] WARNING:  StatReload detected changes in 'main.py'. Reloading...
+[backend] Process SpawnProcess-7:
+[backend] Traceback (most recent call last):
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+[backend]     self.run()
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 108, in run
+[backend]     self._target(*self._args, **self._kwargs)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+[backend]     target(sockets=sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 67, in run
+[backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_compat.py", line 23, in asyncio_run
+[backend]     return runner.run(main)
+[backend]            ^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/runners.py", line 118, in run
+[backend]     return self._loop.run_until_complete(task)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/base_events.py", line 653, in run_until_complete
+[backend]     return future.result()
+[backend]            ^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 71, in serve
+[backend]     await self._serve(sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 78, in _serve
+[backend]     config.load()
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/config.py", line 438, in load
+[backend]     self.loaded_app = import_from_string(self.app)
+[backend]                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 22, in import_from_string
+[backend]     raise exc from None
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+[backend]     module = importlib.import_module(module_str)
+[backend]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/importlib/__init__.py", line 126, in import_module
+[backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "<frozen importlib._bootstrap>", line 1206, in _gcd_import
+[backend]   File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+[backend]   File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+[backend]   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+[backend]   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+[backend]   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/main.py", line 9, in <module>
+[backend]     import database
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/database.py", line 6, in <module>
+[backend]     import databases
+[backend] ModuleNotFoundError: No module named 'databases'
+[backend] WARNING:  StatReload detected changes in 'main.py'. Reloading...
+[backend] Process SpawnProcess-8:
+[backend] Traceback (most recent call last):
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+[backend]     self.run()
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 108, in run
+[backend]     self._target(*self._args, **self._kwargs)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+[backend]     target(sockets=sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 67, in run
+[backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_compat.py", line 23, in asyncio_run
+[backend]     return runner.run(main)
+[backend]            ^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/runners.py", line 118, in run
+[backend]     return self._loop.run_until_complete(task)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/base_events.py", line 653, in run_until_complete
+[backend]     return future.result()
+[backend]            ^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 71, in serve
+[backend]     await self._serve(sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 78, in _serve
+[backend]     config.load()
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/config.py", line 438, in load
+[backend]     self.loaded_app = import_from_string(self.app)
+[backend]                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 22, in import_from_string
+[backend]     raise exc from None
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+[backend]     module = importlib.import_module(module_str)
+[backend]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/importlib/__init__.py", line 126, in import_module
+[backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "<frozen importlib._bootstrap>", line 1206, in _gcd_import
+[backend]   File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+[backend]   File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+[backend]   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+[backend]   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+[backend]   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/main.py", line 9, in <module>
+[backend]     import database
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/database.py", line 6, in <module>
+[backend]     import databases
+[backend] ModuleNotFoundError: No module named 'databases'
+[backend] WARNING:  StatReload detected changes in 'main.py'. Reloading...
+[backend] Process SpawnProcess-9:
+[backend] Traceback (most recent call last):
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+[backend]     self.run()
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 108, in run
+[backend]     self._target(*self._args, **self._kwargs)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+[backend]     target(sockets=sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 67, in run
+[backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_compat.py", line 23, in asyncio_run
+[backend]     return runner.run(main)
+[backend]            ^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/runners.py", line 118, in run
+[backend]     return self._loop.run_until_complete(task)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/base_events.py", line 653, in run_until_complete
+[backend]     return future.result()
+[backend]            ^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 71, in serve
+[backend]     await self._serve(sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 78, in _serve
+[backend]     config.load()
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/config.py", line 438, in load
+[backend]     self.loaded_app = import_from_string(self.app)
+[backend]                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 22, in import_from_string
+[backend]     raise exc from None
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+[backend]     module = importlib.import_module(module_str)
+[backend]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/importlib/__init__.py", line 126, in import_module
+[backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "<frozen importlib._bootstrap>", line 1206, in _gcd_import
+[backend]   File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+[backend]   File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+[backend]   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+[backend]   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+[backend]   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/main.py", line 9, in <module>
+[backend]     import database
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/database.py", line 6, in <module>
+[backend]     import databases
+[backend] ModuleNotFoundError: No module named 'databases'
+[backend] WARNING:  StatReload detected changes in 'main.py'. Reloading...
+[backend] Process SpawnProcess-10:
+[backend] Traceback (most recent call last):
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+[backend]     self.run()
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 108, in run
+[backend]     self._target(*self._args, **self._kwargs)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+[backend]     target(sockets=sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 67, in run
+[backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_compat.py", line 23, in asyncio_run
+[backend]     return runner.run(main)
+[backend]            ^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/runners.py", line 118, in run
+[backend]     return self._loop.run_until_complete(task)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/base_events.py", line 653, in run_until_complete
+[backend]     return future.result()
+[backend]            ^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 71, in serve
+[backend]     await self._serve(sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 78, in _serve
+[backend]     config.load()
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/config.py", line 438, in load
+[backend]     self.loaded_app = import_from_string(self.app)
+[backend]                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 22, in import_from_string
+[backend]     raise exc from None
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+[backend]     module = importlib.import_module(module_str)
+[backend]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/importlib/__init__.py", line 126, in import_module
+[backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "<frozen importlib._bootstrap>", line 1206, in _gcd_import
+[backend]   File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+[backend]   File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+[backend]   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+[backend]   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+[backend]   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/main.py", line 9, in <module>
+[backend]     import database as d
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/database.py", line 6, in <module>
+[backend]     import databases
+[backend] ModuleNotFoundError: No module named 'databases'
+[backend] WARNING:  StatReload detected changes in 'main.py'. Reloading...
+[backend] Process SpawnProcess-11:
+[backend] Traceback (most recent call last):
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+[backend]     self.run()
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 108, in run
+[backend]     self._target(*self._args, **self._kwargs)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+[backend]     target(sockets=sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 67, in run
+[backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_compat.py", line 23, in asyncio_run
+[backend]     return runner.run(main)
+[backend]            ^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/runners.py", line 118, in run
+[backend]     return self._loop.run_until_complete(task)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/base_events.py", line 653, in run_until_complete
+[backend]     return future.result()
+[backend]            ^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 71, in serve
+[backend]     await self._serve(sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 78, in _serve
+[backend]     config.load()
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/config.py", line 438, in load
+[backend]     self.loaded_app = import_from_string(self.app)
+[backend]                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 22, in import_from_string
+[backend]     raise exc from None
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+[backend]     module = importlib.import_module(module_str)
+[backend]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/importlib/__init__.py", line 126, in import_module
+[backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "<frozen importlib._bootstrap>", line 1206, in _gcd_import
+[backend]   File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+[backend]   File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+[backend]   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+[backend]   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+[backend]   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/main.py", line 9, in <module>
+[backend]     import database as db
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/database.py", line 6, in <module>
+[backend]     import databases
+[backend] ModuleNotFoundError: No module named 'databases'
+[backend] WARNING:  StatReload detected changes in 'main.py'. Reloading...
+[backend] Process SpawnProcess-12:
+[backend] Traceback (most recent call last):
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+[backend]     self.run()
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 108, in run
+[backend]     self._target(*self._args, **self._kwargs)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+[backend]     target(sockets=sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 67, in run
+[backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_compat.py", line 23, in asyncio_run
+[backend]     return runner.run(main)
+[backend]            ^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/runners.py", line 118, in run
+[backend]     return self._loop.run_until_complete(task)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/base_events.py", line 653, in run_until_complete
+[backend]     return future.result()
+[backend]            ^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 71, in serve
+[backend]     await self._serve(sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 78, in _serve
+[backend]     config.load()
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/config.py", line 438, in load
+[backend]     self.loaded_app = import_from_string(self.app)
+[backend]                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 22, in import_from_string
+[backend]     raise exc from None
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+[backend]     module = importlib.import_module(module_str)
+[backend]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/importlib/__init__.py", line 126, in import_module
+[backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "<frozen importlib._bootstrap>", line 1206, in _gcd_import
+[backend]   File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+[backend]   File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+[backend]   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+[backend]   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+[backend]   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/main.py", line 10, in <module>
+[backend]     from db import (
+[backend] ModuleNotFoundError: No module named 'db'
+[backend] WARNING:  StatReload detected changes in 'main.py'. Reloading...
+[backend] Process SpawnProcess-13:
+[backend] Traceback (most recent call last):
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+[backend]     self.run()
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 108, in run
+[backend]     self._target(*self._args, **self._kwargs)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+[backend]     target(sockets=sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 67, in run
+[backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_compat.py", line 23, in asyncio_run
+[backend]     return runner.run(main)
+[backend]            ^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/runners.py", line 118, in run
+[backend]     return self._loop.run_until_complete(task)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/base_events.py", line 653, in run_until_complete
+[backend]     return future.result()
+[backend]            ^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 71, in serve
+[backend]     await self._serve(sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 78, in _serve
+[backend]     config.load()
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/config.py", line 438, in load
+[backend]     self.loaded_app = import_from_string(self.app)
+[backend]                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 22, in import_from_string
+[backend]     raise exc from None
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+[backend]     module = importlib.import_module(module_str)
+[backend]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/importlib/__init__.py", line 126, in import_module
+[backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "<frozen importlib._bootstrap>", line 1206, in _gcd_import
+[backend]   File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+[backend]   File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+[backend]   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+[backend]   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+[backend]   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/main.py", line 10, in <module>
+[backend]     from da import (
+[backend] ModuleNotFoundError: No module named 'da'
+[backend] WARNING:  StatReload detected changes in 'main.py'. Reloading...
+[backend] Process SpawnProcess-14:
+[backend] Traceback (most recent call last):
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+[backend]     self.run()
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 108, in run
+[backend]     self._target(*self._args, **self._kwargs)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+[backend]     target(sockets=sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 67, in run
+[backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_compat.py", line 23, in asyncio_run
+[backend]     return runner.run(main)
+[backend]            ^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/runners.py", line 118, in run
+[backend]     return self._loop.run_until_complete(task)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/base_events.py", line 653, in run_until_complete
+[backend]     return future.result()
+[backend]            ^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 71, in serve
+[backend]     await self._serve(sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 78, in _serve
+[backend]     config.load()
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/config.py", line 438, in load
+[backend]     self.loaded_app = import_from_string(self.app)
+[backend]                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 22, in import_from_string
+[backend]     raise exc from None
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+[backend]     module = importlib.import_module(module_str)
+[backend]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/importlib/__init__.py", line 126, in import_module
+[backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "<frozen importlib._bootstrap>", line 1206, in _gcd_import
+[backend]   File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+[backend]   File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+[backend]   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+[backend]   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+[backend]   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/main.py", line 10, in <module>
+[backend]     from database import (
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/database.py", line 6, in <module>
+[backend]     import databases
+[backend] ModuleNotFoundError: No module named 'databases'
+[backend] WARNING:  StatReload detected changes in 'main.py'. Reloading...
+[backend] Process SpawnProcess-15:
+[backend] Traceback (most recent call last):
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+[backend]     self.run()
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 108, in run
+[backend]     self._target(*self._args, **self._kwargs)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+[backend]     target(sockets=sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 67, in run
+[backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_compat.py", line 23, in asyncio_run
+[backend]     return runner.run(main)
+[backend]            ^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/runners.py", line 118, in run
+[backend]     return self._loop.run_until_complete(task)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/base_events.py", line 653, in run_until_complete
+[backend]     return future.result()
+[backend]            ^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 71, in serve
+[backend]     await self._serve(sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 78, in _serve
+[backend]     config.load()
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/config.py", line 438, in load
+[backend]     self.loaded_app = import_from_string(self.app)
+[backend]                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 22, in import_from_string
+[backend]     raise exc from None
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+[backend]     module = importlib.import_module(module_str)
+[backend]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/importlib/__init__.py", line 126, in import_module
+[backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "<frozen importlib._bootstrap>", line 1206, in _gcd_import
+[backend]   File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+[backend]   File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+[backend]   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+[backend]   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+[backend]   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/main.py", line 9, in <module>
+[backend]     import database
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/database.py", line 6, in <module>
+[backend]     import databases
+[backend] ModuleNotFoundError: No module named 'databases'
+[backend] INFO:     Stopping reloader process [10112]
+[backend] INFO:     Will watch for changes in these directories: ['/Users/simonneumann/code/GCSE_AI_agent/backend']
+[backend] INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+[backend] INFO:     Started reloader process [13756] using StatReload
+[backend] Process SpawnProcess-1:
+[backend] Traceback (most recent call last):
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+[backend]     self.run()
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 108, in run
+[backend]     self._target(*self._args, **self._kwargs)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+[backend]     target(sockets=sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 67, in run
+[backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_compat.py", line 23, in asyncio_run
+[backend]     return runner.run(main)
+[backend]            ^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/runners.py", line 118, in run
+[backend]     return self._loop.run_until_complete(task)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/base_events.py", line 653, in run_until_complete
+[backend]     return future.result()
+[backend]            ^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 71, in serve
+[backend]     await self._serve(sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 78, in _serve
+[backend]     config.load()
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/config.py", line 438, in load
+[backend]     self.loaded_app = import_from_string(self.app)
+[backend]                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 22, in import_from_string
+[backend]     raise exc from None
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+[backend]     module = importlib.import_module(module_str)
+[backend]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/importlib/__init__.py", line 126, in import_module
+[backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "<frozen importlib._bootstrap>", line 1206, in _gcd_import
+[backend]   File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+[backend]   File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+[backend]   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+[backend]   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+[backend]   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/main.py", line 9, in <module>
+[backend]     import database
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/database.py", line 6, in <module>
+[backend]     import databases
+[backend] ModuleNotFoundError: No module named 'databases'
+[backend] INFO:     Stopping reloader process [13756]
+[backend] INFO:     Will watch for changes in these directories: ['/Users/simonneumann/code/GCSE_AI_agent/backend']
+[backend] INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+[backend] INFO:     Started reloader process [14804] using StatReload
+[backend] INFO:     Started server process [14817]
+[backend] INFO:     Waiting for application startup.
+[backend] INFO:     Application startup complete.
+[backend] WARNING:  StatReload detected changes in 'main.py'. Reloading...
+[backend] INFO:     Shutting down
+[backend] INFO:     Waiting for application shutdown.
+[backend] INFO:     Application shutdown complete.
+[backend] INFO:     Finished server process [14817]
+[backend] Process SpawnProcess-2:
+[backend] Traceback (most recent call last):
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+[backend]     self.run()
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/process.py", line 108, in run
+[backend]     self._target(*self._args, **self._kwargs)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+[backend]     target(sockets=sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 67, in run
+[backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/_compat.py", line 23, in asyncio_run
+[backend]     return runner.run(main)
+[backend]            ^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/runners.py", line 118, in run
+[backend]     return self._loop.run_until_complete(task)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/base_events.py", line 653, in run_until_complete
+[backend]     return future.result()
+[backend]            ^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 71, in serve
+[backend]     await self._serve(sockets)
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/server.py", line 78, in _serve
+[backend]     config.load()
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/config.py", line 438, in load
+[backend]     self.loaded_app = import_from_string(self.app)
+[backend]                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/.venv/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+[backend]     module = importlib.import_module(module_str)
+[backend]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "/usr/local/Cellar/python@3.11/3.11.1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/importlib/__init__.py", line 126, in import_module
+[backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[backend]   File "<frozen importlib._bootstrap>", line 1206, in _gcd_import
+[backend]   File "<frozen importlib._bootstrap>", line 1178, in _find_and_load
+[backend]   File "<frozen importlib._bootstrap>", line 1149, in _find_and_load_unlocked
+[backend]   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+[backend]   File "<frozen importlib._bootstrap_external>", line 936, in exec_module
+[backend]   File "<frozen importlib._bootstrap_external>", line 1074, in get_code
+[backend]   File "<frozen importlib._bootstrap_external>", line 1004, in source_to_code
+[backend]   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+[backend]   File "/Users/simonneumann/code/GCSE_AI_agent/backend/main.py", line 74
+[backend]     response = db.table().get_item(Key={"PK": PK_CONST, "SK": SK_CONST})
+[backend]     ^^^^^^^^
+[backend] IndentationError: expected an indented block after 'try' statement on line 73
+[backend] WARNING:  StatReload detected changes in 'main.py'. Reloading...
+[backend] INFO:     Started server process [16660]
+[backend] INFO:     Waiting for application startup.
+[backend] INFO:     Application startup complete.
+[backend] INFO:     Shutting down
+[backend] INFO:     Waiting for application shutdown.
+[backend] INFO:     Application shutdown complete.
+[backend] INFO:     Finished server process [16660]
+[backend] INFO:     Stopping reloader process [14804]
+[backend] INFO:     127.0.0.1:53186 - "GET /api/v1/review/next?uid=null HTTP/1.1" 404 Not Found
+[backend] INFO:     127.0.0.1:53186 - "GET /api/v1/review/next?uid=null HTTP/1.1" 404 Not Found
+[backend] INFO:     127.0.0.1:53186 - "OPTIONS /api/v1/users/bootstrap HTTP/1.1" 200 OK
+[backend] INFO:     127.0.0.1:53192 - "OPTIONS /api/v1/users/bootstrap HTTP/1.1" 200 OK
+[backend] INFO:     127.0.0.1:53186 - "POST /api/v1/users/bootstrap HTTP/1.1" 200 OK
+[backend] INFO:     127.0.0.1:53186 - "GET /api/v1/subjects HTTP/1.1" 200 OK
+[backend] INFO:     127.0.0.1:53186 - "GET /api/v1/subjects HTTP/1.1" 200 OK
+[backend] INFO:     127.0.0.1:53192 - "POST /api/v1/users/bootstrap HTTP/1.1" 200 OK
+[backend] INFO:     127.0.0.1:53192 - "GET /api/v1/subjects HTTP/1.1" 200 OK
+[backend] INFO:     127.0.0.1:53194 - "OPTIONS /api/v1/quiz/start HTTP/1.1" 200 OK
+[backend] INFO:     127.0.0.1:53196 - "POST /api/v1/quiz/start HTTP/1.1" 200 OK
