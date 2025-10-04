@@ -1,36 +1,30 @@
-import React, { useEffect, useState } from "react";
-import logo from './logo.svg';
+import React from "react";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import './App.css';
 
+import Home from './pages/Home';
+import Topic from './pages/Topic';
+import Quiz from './pages/Quiz';
+import Results from './pages/Results';
+import Review from './pages/Review';
+
 function App() {
-  const [message, setMessage] = useState("");
-  const [input, setInput] = useState("");
-
-  useEffect(() => {
-    fetch("/api/message")
-      .then(res => res.json())
-      .then(data => setMessage(data.message));
-  }, []);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    await fetch("/api/message", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: input }),
-    });
-    setMessage(input);
-    setInput("");
-  };
-
   return (
-    <div className="App">
-      <h1>Message from DB: {message}</h1>
-      <form onSubmit={handleSubmit}>
-        <input value={input} onChange={e => setInput(e.target.value)} />
-        <button type="submit">Save Message</button>
-      </form>
-    </div>
+    <BrowserRouter>
+      <div className="App" style={{padding:'0 1rem'}}>
+        <nav style={{display:'flex', gap:12, padding:'0.5rem 0'}}>
+          <Link to="/">Home</Link>
+          <Link to="/review">Review</Link>
+        </nav>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/topics/:topicId" element={<Topic />} />
+          <Route path="/quiz/:quizId" element={<Quiz />} />
+          <Route path="/results/:quizId" element={<Results />} />
+          <Route path="/review" element={<Review />} />
+        </Routes>
+      </div>
+    </BrowserRouter>
   );
 }
 

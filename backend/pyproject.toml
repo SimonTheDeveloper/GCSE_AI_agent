@@ -15,6 +15,9 @@ databases = "^0.5.5"
 aiosqlite = "^0.17.0"
 aws-cdk-lib = "==2.166.0"
 greenlet = ">=3.0.0,<3.3.0"
+dotenv = "^0.9.9"
+schemas = "^0.7.1"
+logging = "^0.4.9.6"
 
 [tool.poetry.dev-dependencies]
 black = "^21.7b0"

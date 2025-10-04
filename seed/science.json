@@ -1,0 +1,50 @@
+{
+  "subject": "Science",
+  "topics": [
+    {
+      "id": "science-cells-intro",
+      "title": "Cells: Intro",
+      "estMinutes": 9,
+      "cards": [
+        {"id":"c1","front":"Basic unit of life is the…","back":"cell","tag":"recall"},
+        {"id":"c2","front":"Organelle responsible for energy production","back":"mitochondrion","tag":"recall"},
+        {"id":"c3","front":"Where does photosynthesis occur?","back":"chloroplast","tag":"recall"},
+        {"id":"c4","front":"Genetic material is…","back":"DNA","tag":"recall"},
+        {"id":"c5","front":"What controls cell activities?","back":"nucleus","tag":"recall"}
+      ],
+      "mcq": [
+        {"id":"q1","stem":"DNA is found in the…","choices":["cytoplasm","nucleus","cell wall","ribosome"],"answer":1}
+      ]
+    },
+    {
+      "id": "science-forces-basics",
+      "title": "Forces: Basics",
+      "estMinutes": 10,
+      "cards": [
+        {"id":"c1","front":"Unit of force","back":"newton","tag":"recall"},
+        {"id":"c2","front":"Force that opposes motion","back":"friction","tag":"recall"},
+        {"id":"c3","front":"F=ma: what is m?","back":"mass","tag":"recall"},
+        {"id":"c4","front":"What reduces friction?","back":"lubrication","tag":"recall"},
+        {"id":"c5","front":"Vector quantity with magnitude and direction","back":"force","tag":"recall"}
+      ],
+      "mcq": [
+        {"id":"q1","stem":"Acceleration due to gravity on Earth is approx…","choices":["4.9 m/s^2","9.8 m/s^2","1 m/s^2","12 m/s^2"],"answer":1}
+      ]
+    },
+    {
+      "id": "science-states-of-matter",
+      "title": "States of Matter",
+      "estMinutes": 7,
+      "cards": [
+        {"id":"c1","front":"Solid to liquid phase change","back":"melting","tag":"recall"},
+        {"id":"c2","front":"Gas to liquid phase change","back":"condensation","tag":"recall"},
+        {"id":"c3","front":"Liquid to gas is…","back":"evaporation","tag":"recall"},
+        {"id":"c4","front":"Solid to gas is…","back":"sublimation","tag":"recall"},
+        {"id":"c5","front":"Liquid to solid is…","back":"freezing","tag":"recall"}
+      ],
+      "mcq": [
+        {"id":"q1","stem":"Liquid to gas is called…","choices":["freezing","evaporation","sublimation","deposition"],"answer":1}
+      ]
+    }
+  ]
+}

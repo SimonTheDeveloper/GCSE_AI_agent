@@ -10,6 +10,7 @@ from aws_cdk import (
     aws_s3 as s3,
     aws_s3_deployment as s3deploy,
     RemovalPolicy,
+    Duration,
 )
 from constructs import Construct
 import os
@@ -19,7 +20,8 @@ class GcseAiStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         # Read project-specific values from environment variables or use defaults
-        table_name = os.environ.get("DYNAMODB_TABLE_NAME", "student-progress")
+        # Force new single-table name gcse_app unless overridden explicitly
+        table_name = os.environ.get("DYNAMODB_TABLE_NAME", "gcse_app")
         bucket_name = os.environ.get("FRONTEND_BUCKET_NAME", "frontend-bucket")
 
         # VPC (2 AZs)
@@ -28,13 +30,20 @@ class GcseAiStack(Stack):
         # ECS Cluster
         cluster = ecs.Cluster(self, "AppCluster", vpc=vpc)
 
-        # DynamoDB Table
+        # DynamoDB Single Table (PK/SK + GSI1)
         table = dynamodb.Table(
-            self, "student-progress",
+            self, "GcseAppTable",
             table_name=table_name,
-            partition_key=dynamodb.Attribute(name="student_id", type=dynamodb.AttributeType.STRING),
-            sort_key=dynamodb.Attribute(name="subject_topic", type=dynamodb.AttributeType.STRING),
-            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST
+            partition_key=dynamodb.Attribute(name="PK", type=dynamodb.AttributeType.STRING),
+            sort_key=dynamodb.Attribute(name="SK", type=dynamodb.AttributeType.STRING),
+            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
+            removal_policy=RemovalPolicy.DESTROY  # CHANGE TO RETAIN FOR PRODUCTION
+        )
+        table.add_global_secondary_index(
+            index_name="GSI1",
+            partition_key=dynamodb.Attribute(name="GSI1PK", type=dynamodb.AttributeType.STRING),
+            sort_key=dynamodb.Attribute(name="GSI1SK", type=dynamodb.AttributeType.STRING),
+            projection_type=dynamodb.ProjectionType.ALL
         )
 
         # IAM Role for Task Execution
@@ -54,37 +63,67 @@ class GcseAiStack(Stack):
 
         container = task_definition.add_container(
             "AppContainer",
-            image=ecs.ContainerImage.from_asset("./"),
+            # Build Docker image from the backend directory (two levels up from cdk/)
+            image=ecs.ContainerImage.from_asset("../../backend"),
             logging=ecs.LogDriver.aws_logs(
                 stream_prefix="AppLogs",
                 log_retention=logs.RetentionDays.ONE_WEEK
-            )
+            ),
+            environment={
+                "DYNAMODB_TABLE_NAME": table_name,
+                "DYNAMODB_GSI1": "GSI1"
+            }
         )
-        container.add_port_mappings(ecs.PortMapping(container_port=80))
+        # Align container port with uvicorn port inside Dockerfile (8001)
+        container.add_port_mappings(ecs.PortMapping(container_port=8001))
 
         # Fargate Service behind Load Balancer
         service = ecs_patterns.ApplicationLoadBalancedFargateService(
             self, "AppFargateService",
             cluster=cluster,
             task_definition=task_definition,
-            public_load_balancer=True
+            public_load_balancer=True,
+            health_check_grace_period=Duration.seconds(120),
+        )
+
+        # Make ALB health checks hit /health and expect HTTP 200
+        service.target_group.configure_health_check(
+            path="/health",
+            healthy_http_codes="200",
+            interval=Duration.seconds(30),
+            timeout=Duration.seconds(5),
+            healthy_threshold_count=2,
+            unhealthy_threshold_count=3,
         )
 
         # S3 bucket for React frontend hosting
-        frontend_bucket = s3.Bucket(
-            self, "FrontendBucket",
-            bucket_name=bucket_name,
-            website_index_document="index.html",
-            website_error_document="index.html",
-            public_read_access=True,
-            block_public_access=s3.BlockPublicAccess.BLOCK_ACLS,
-            removal_policy=RemovalPolicy.DESTROY
-        )
+        # If user did not explicitly set FRONTEND_BUCKET_NAME, let CDK generate a unique name
+        if os.environ.get("FRONTEND_BUCKET_NAME"):
+            frontend_bucket = s3.Bucket(
+                self, "FrontendBucket",
+                bucket_name=bucket_name,
+                website_index_document="index.html",
+                website_error_document="index.html",
+                public_read_access=True,
+                block_public_access=s3.BlockPublicAccess.BLOCK_ACLS,
+                removal_policy=RemovalPolicy.DESTROY,
+                auto_delete_objects=True,   # ensure deletable during rollback/destroy
+            )
+        else:
+            frontend_bucket = s3.Bucket(
+                self, "FrontendBucket",
+                website_index_document="index.html",
+                website_error_document="index.html",
+                public_read_access=True,
+                block_public_access=s3.BlockPublicAccess.BLOCK_ACLS,
+                removal_policy=RemovalPolicy.DESTROY,
+                auto_delete_objects=True,
+            )
 
         # (Optional) Deploy local build folder to S3 on cdk deploy
         s3deploy.BucketDeployment(
             self, "DeployReactApp",
-            sources=[s3deploy.Source.asset("frontend/build")],
+            sources=[s3deploy.Source.asset("../../frontend/build")],
             destination_bucket=frontend_bucket,
         )
 
@@ -95,3 +134,5 @@ class GcseAiStack(Stack):
                   export_name="FastApiLoadBalancerUrl")
 
         CfnOutput(self, "FrontendBucketURL", value=frontend_bucket.bucket_website_url)
+        CfnOutput(self, "DynamoTableName", value=table.table_name)
+        CfnOutput(self, "DynamoGSI1", value="GSI1")
