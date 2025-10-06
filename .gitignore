@@ -21,3 +21,5 @@ cdk.out/
 
 .dev-logs/backend.log
 .dev-logs/frontend.log
+
+.dev-logs/
