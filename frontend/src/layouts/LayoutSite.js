@@ -63,7 +63,6 @@ export default function LayoutSite({ children, showTopStrip = false }) {
                   </li>
                   <li className={isActive('/review') ? 'active' : ''}><Link to="/review">Review</Link></li>
                   <li className={isActive('/homework') ? 'active' : ''}><Link to="/homework">My homework</Link></li>
-                  <li><a href="/theme/edule/contact.html">Contact</a></li>
                 </ul>
               </div>
 
@@ -122,7 +121,12 @@ export default function LayoutSite({ children, showTopStrip = false }) {
             <div className="row align-items-center">
               <div className="col-md-6">
                 <div className="copyright-text">
-                  <p>© 2025 <span>GCSE</span> Made with <i className="icofont-heart-alt"></i> by You</p>
+                  <p>© 2025 <span>Study with Seb</span> Made by Kamia Consulting</p>
+                </div>
+              </div>
+              <div className="col-md-6">
+                <div className="copyright-text">
+                  <p><a href="/theme/edule/contact.html" onClick={() => setMobileOpen(false)}>Contact</a></p>
                 </div>
               </div>
             </div>

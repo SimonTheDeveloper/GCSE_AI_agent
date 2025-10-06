@@ -24,7 +24,7 @@ export default function Home() {
           <div className="row align-items-center g-4">
             <div className="col-lg-7">
               <div className="hero-content">
-                <h1 className="title">Ace your GCSEs with smart quizzes and review</h1>
+                <h1 className="title">Ace your GCSEs</h1>
                 <p>Start a topic, take a quick quiz, and focus your review where it matters.</p>
                 <div className="hero-btn">
                   <Link className="btn btn-primary btn-hover-dark" to="/review">Go to Review Queue</Link>

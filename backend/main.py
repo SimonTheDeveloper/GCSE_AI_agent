@@ -6,6 +6,7 @@ from typing import List
 from uuid import uuid4
 from dotenv import load_dotenv
 import db
+import shutil
 
 from db import (
     get_user_profile, put_user_profile, get_uid_by_device,
@@ -56,6 +57,59 @@ app.add_middleware(
 async def health():
     '''Health check endpoint.'''
     return {"status": "ok"}
+
+
+@app.get("/api/v1/diagnostics")
+def diagnostics():
+    """Return runtime diagnostics for optional features (OCR, AI) and core deps.
+
+    This does not throw if deps are missing; instead it reports readiness flags.
+    """
+    # multipart (required for File/Form)
+    multipart_ok = False
+    try:
+        import multipart  # type: ignore
+        multipart_ok = True
+    except Exception:
+        multipart_ok = False
+
+    # OCR readiness
+    ocr_py = False
+    try:
+        import pytesseract  # type: ignore
+        from PIL import Image as _Img  # type: ignore  # noqa: F401
+        ocr_py = True
+    except Exception:
+        ocr_py = False
+    tesseract_path = shutil.which("tesseract")
+    ocr_enabled = bool(ocr_py and tesseract_path)
+
+    # AI readiness
+    api_key_present = bool(os.getenv("OPENAI_API_KEY"))
+    openai_ok = False
+    try:
+        import openai  # type: ignore  # noqa: F401
+        openai_ok = True
+    except Exception:
+        openai_ok = False
+    ai_enabled = bool(api_key_present and openai_ok)
+
+    return {
+        "status": "ok",
+        "multipart": {"installed": multipart_ok},
+        "ocr": {
+            "pythonDeps": ocr_py,
+            "tesseractBinary": bool(tesseract_path),
+            "tesseractPath": tesseract_path,
+            "enabled": ocr_enabled,
+        },
+        "ai": {
+            "apiKey": api_key_present,
+            "sdk": openai_ok,
+            "model": os.getenv("OPENAI_MODEL"),
+            "enabled": ai_enabled,
+        },
+    }
 
 @app.get("/")
 def read_root():
@@ -341,31 +395,33 @@ async def homework_submit(
                 warnings.append("AI help not available: install openai python package.")
             else:
                 try:
-                    openai.api_key = openai_api_key
-                    # Use Chat Completions if available, fallback to Completions
                     prompt = (
                         "You are a helpful GCSE study assistant. Given the student's question and any OCR-extracted text, "
                         "explain the steps to solve it clearly. If it is a multi-part question, break it down. "
                         "Avoid giving the final answer immediately; guide the student with reasoning and hints.\n\n"
                         f"Student input:\n{combined}\n\nResponse:"
                     )
-                    try:
-                        # Modern API
-                        resp = openai.ChatCompletion.create(
-                            model=os.getenv("OPENAI_MODEL", "gpt-3.5-turbo"),
+                    model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+
+                    # Support both new (>=1.0) and legacy (<1.0) SDKs
+                    if hasattr(openai, "OpenAI"):
+                        # New SDK style
+                        client = openai.OpenAI(api_key=openai_api_key)  # type: ignore[attr-defined]
+                        resp = client.chat.completions.create(
+                            model=model,
+                            messages=[{"role": "user", "content": prompt}],
+                            temperature=0.2,
+                        )
+                        ai_help_text = (resp.choices[0].message.content or "").strip()
+                    else:
+                        # Legacy SDK style
+                        openai.api_key = openai_api_key  # type: ignore[attr-defined]
+                        resp = openai.ChatCompletion.create(  # type: ignore[attr-defined]
+                            model=model,
                             messages=[{"role": "user", "content": prompt}],
                             temperature=0.2,
                         )
                         ai_help_text = resp["choices"][0]["message"]["content"].strip()
-                    except Exception:
-                        # Legacy fallback
-                        resp = openai.Completion.create(
-                            model=os.getenv("OPENAI_MODEL", "text-davinci-003"),
-                            prompt=prompt,
-                            max_tokens=500,
-                            temperature=0.2,
-                        )
-                        ai_help_text = resp["choices"][0]["text"].strip()
                 except Exception as e:
                     warnings.append(f"AI help failed: {e}")
         else:
