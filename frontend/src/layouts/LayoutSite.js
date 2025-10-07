@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { buildAuthorizeUrl, buildLogoutUrl, isAuthenticated, beginLogin } from '../auth';
 
 export default function LayoutSite({ children, showTopStrip = false }) {
   const location = useLocation();
@@ -10,6 +11,9 @@ export default function LayoutSite({ children, showTopStrip = false }) {
     // Close mobile menu on route change
     setMobileOpen(false);
   }, [location.pathname]);
+  const signedIn = isAuthenticated();
+  const signInUrl = buildAuthorizeUrl();
+  const signOutUrl = buildLogoutUrl();
   return (
     <div className="main-wrapper d-flex flex-column" style={{minHeight: '100vh'}}>
       {/* Header Section Start (with top strip) */}
@@ -69,8 +73,15 @@ export default function LayoutSite({ children, showTopStrip = false }) {
               {/* Sign in/up */}
               <div className="header-sign-in-up d-none d-lg-block">
                 <ul>
-                  <li><a className="sign-in" href="/theme/edule/login.html">Sign In</a></li>
-                  <li><a className="sign-up" href="/theme/edule/register.html">Sign Up</a></li>
+                  {!signedIn ? (
+                    <>
+                      <li><a className="sign-in" href={signInUrl} onClick={(e) => { e.preventDefault(); beginLogin(); }}>Sign In</a></li>
+                    </>
+                  ) : (
+                    <>
+                      <li><a className="sign-in" href={signOutUrl}>Sign Out</a></li>
+                    </>
+                  )}
                 </ul>
               </div>
 
@@ -103,6 +114,11 @@ export default function LayoutSite({ children, showTopStrip = false }) {
             <li className={isActive('/subjects/maths') ? 'active' : ''}><Link to="/subjects/maths" onClick={() => setMobileOpen(false)}>Maths</Link></li>
             <li className={isActive('/subjects/science') ? 'active' : ''}><Link to="/subjects/science" onClick={() => setMobileOpen(false)}>Science</Link></li>
             <li><a href="/theme/edule/contact.html" onClick={() => setMobileOpen(false)}>Contact</a></li>
+            {!signedIn ? (
+              <li><a className="sign-in" href={signInUrl} onClick={(e) => { e.preventDefault(); setMobileOpen(false); beginLogin(); }}>Sign In</a></li>
+            ) : (
+              <li><a className="sign-in" href={signOutUrl} onClick={() => setMobileOpen(false)}>Sign Out</a></li>
+            )}
           </ul>
         </div>
       </div>

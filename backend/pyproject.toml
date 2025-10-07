@@ -18,7 +18,9 @@ schemas = "^0.7.1"
 logging = "^0.4.9.6"
 Pillow = "^10.0.0"
 pytesseract = "^0.3.10"
-openai = "^0.28.0"
+openai = ">=0.28.1"
+python-jose = {extras = ["cryptography"], version = ">=3.3.0"}
+requests = ">=2.31.0"
 
 [tool.poetry.dev-dependencies]
 black = "^21.7b0"

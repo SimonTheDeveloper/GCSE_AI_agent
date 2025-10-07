@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { authHeader } from '../auth';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8001';
 
@@ -12,7 +13,7 @@ export const useAppStore = create((set, get) => ({
     try {
       res = await fetch(`${API_BASE}/api/v1/users/bootstrap`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeader() },
         body: JSON.stringify({ deviceId }),
       });
     } catch (err) {
@@ -31,7 +32,7 @@ export const useAppStore = create((set, get) => ({
   fetchSubjects: async () => {
     let res, data;
     try {
-      res = await fetch(`${API_BASE}/api/v1/subjects`);
+  res = await fetch(`${API_BASE}/api/v1/subjects`, { headers: { ...authHeader() } });
     } catch (err) {
   console.error('fetchSubjects network error:', err);
   throw new Error(`Unable to reach API at ${API_BASE}. Is the backend running?`);
@@ -54,7 +55,7 @@ export const useAppStore = create((set, get) => ({
     try {
       res = await fetch(`${API_BASE}/api/v1/quiz/start`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeader() },
         body: JSON.stringify({ uid, topicId, numQuestions })
       });
     } catch (err) {
@@ -79,7 +80,7 @@ export const useAppStore = create((set, get) => ({
     try {
       res = await fetch(`${API_BASE}/api/v1/quiz/submit`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeader() },
         body: JSON.stringify({ uid, quizId: q.quizId, answers })
       });
     } catch (err) {
@@ -98,7 +99,7 @@ export const useAppStore = create((set, get) => ({
     const uid = get().uid;
     let res;
     try {
-      res = await fetch(`${API_BASE}/api/v1/review/next?uid=${encodeURIComponent(uid)}`);
+  res = await fetch(`${API_BASE}/api/v1/review/next?uid=${encodeURIComponent(uid)}`, { headers: { ...authHeader() } });
     } catch (err) {
   console.error('fetchReviewNext network error:', err);
   throw new Error(`Unable to reach API at ${API_BASE}. Is the backend running?`);
@@ -106,6 +107,21 @@ export const useAppStore = create((set, get) => ({
     if (!res.ok) {
       const text = await res.text();
       throw new Error(`Fetch review failed: ${res.status} ${res.statusText} - ${text}`);
+    }
+    return res.json();
+  },
+
+  me: async () => {
+    let res;
+    try {
+      res = await fetch(`${API_BASE}/api/v1/me`, { headers: { ...authHeader() } });
+    } catch (err) {
+      console.error('me network error:', err);
+      throw new Error(`Unable to reach API at ${API_BASE}. Is the backend running?`);
+    }
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`me failed: ${res.status} ${res.statusText} - ${text}`);
     }
     return res.json();
   }

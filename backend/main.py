@@ -15,7 +15,7 @@ from db import (
     save_quiz_result, recent_wrong_cards,
 )
 
-from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
 from schemas import (BootstrapReq, BootstrapRes, BreakdownItem, Card,
@@ -23,6 +23,7 @@ from schemas import (BootstrapReq, BootstrapRes, BreakdownItem, Card,
                         QuizSubmitRes, ReviewDueGroup, ReviewNextRes,
                         SubjectWithTopics, TopicCardsRes, TopicStub,
                         HomeworkSubmitRes)
+from auth import get_default_verifier
 
 
 logging.basicConfig(level=logging.INFO)
@@ -110,6 +111,26 @@ def diagnostics():
             "enabled": ai_enabled,
         },
     }
+
+
+def _get_claims_from_auth_header(request: Request):
+    verifier = get_default_verifier()
+    if not verifier:
+        raise HTTPException(status_code=503, detail="Cognito not configured")
+    auth = request.headers.get("Authorization")
+    if not auth or not auth.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="Missing bearer token")
+    token = auth.split(" ", 1)[1].strip()
+    try:
+        claims = verifier.verify(token)
+        return claims
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
+
+
+@app.get("/api/v1/me")
+def me(claims: dict = Depends(_get_claims_from_auth_header)):
+    return {"claims": claims}
 
 @app.get("/")
 def read_root():

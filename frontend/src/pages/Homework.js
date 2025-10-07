@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { authHeader } from '../auth';
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8001';
 
 export default function Homework() {
@@ -104,6 +105,7 @@ export default function Homework() {
 
       const res = await fetch(`${API_BASE}/api/v1/homework/submit`, {
         method: 'POST',
+        headers: { ...authHeader() },
         body: fd,
       });
       if (!res.ok) {

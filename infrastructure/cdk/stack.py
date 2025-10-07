@@ -6,6 +6,7 @@ from aws_cdk import (
     aws_dynamodb as dynamodb,
     aws_iam as iam,
     aws_logs as logs,
+    aws_cognito as cognito,
     CfnOutput,
     aws_s3 as s3,
     aws_s3_deployment as s3deploy,
@@ -71,7 +72,8 @@ class GcseAiStack(Stack):
             ),
             environment={
                 "DYNAMODB_TABLE_NAME": table_name,
-                "DYNAMODB_GSI1": "GSI1"
+                "DYNAMODB_GSI1": "GSI1",
+                # Placeholder values, updated after Cognito is defined below
             }
         )
         # Align container port with uvicorn port inside Dockerfile (8001)
@@ -136,3 +138,68 @@ class GcseAiStack(Stack):
         CfnOutput(self, "FrontendBucketURL", value=frontend_bucket.bucket_website_url)
         CfnOutput(self, "DynamoTableName", value=table.table_name)
         CfnOutput(self, "DynamoGSI1", value="GSI1")
+
+        # ==========================
+        # Cognito User Pool + Hosted UI
+        # ==========================
+        # Allow overrides from env for domain prefix and callback URLs
+        domain_prefix = os.environ.get("COGNITO_DOMAIN_PREFIX") or f"gcse-ai-{Stack.of(self).stack_name.lower()}"
+        # Trim invalid chars and length for domain prefix
+        domain_prefix = domain_prefix.replace("_", "-")[:63]
+
+        user_pool = cognito.UserPool(
+            self,
+            "UserPool",
+            self_sign_up_enabled=True,
+            sign_in_aliases=cognito.SignInAliases(email=True),
+            standard_attributes=cognito.StandardAttributes(
+                email=cognito.StandardAttribute(required=True, mutable=False)
+            ),
+            password_policy=cognito.PasswordPolicy(min_length=8),
+            account_recovery=cognito.AccountRecovery.EMAIL_ONLY,
+            removal_policy=RemovalPolicy.DESTROY,  # consider RETAIN for prod
+        )
+
+        callback_urls = [
+            "http://localhost:3000",
+        ]
+        logout_urls = [
+            "http://localhost:3000",
+        ]
+        # Allow env overrides
+        if os.environ.get("COGNITO_CALLBACK_URLS"):
+            callback_urls = [u.strip() for u in os.environ["COGNITO_CALLBACK_URLS"].split(",") if u.strip()]
+        if os.environ.get("COGNITO_LOGOUT_URLS"):
+            logout_urls = [u.strip() for u in os.environ["COGNITO_LOGOUT_URLS"].split(",") if u.strip()]
+
+        user_pool_client = cognito.UserPoolClient(
+            self,
+            "UserPoolClient",
+            user_pool=user_pool,
+            generate_secret=False,
+            o_auth=cognito.OAuthSettings(
+                flows=cognito.OAuthFlows(authorization_code_grant=True, implicit_code_grant=True),
+                scopes=[cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL, cognito.OAuthScope.PROFILE],
+                callback_urls=callback_urls,
+                logout_urls=logout_urls,
+            ),
+            prevent_user_existence_errors=True,
+        )
+
+        domain = user_pool.add_domain(
+            "CognitoDomain",
+            cognito_domain=cognito.CognitoDomainOptions(domain_prefix=domain_prefix),
+        )
+
+        issuer_url = f"https://cognito-idp.{self.region}.amazonaws.com/{user_pool.user_pool_id}"
+
+        # Update container env with Cognito details so backend can verify JWTs
+        container.add_environment("AWS_REGION", self.region)
+        container.add_environment("COGNITO_USER_POOL_ID", user_pool.user_pool_id)
+        container.add_environment("COGNITO_APP_CLIENT_ID", user_pool_client.user_pool_client_id)
+        container.add_environment("COGNITO_ISSUER", issuer_url)
+
+        CfnOutput(self, "CognitoUserPoolId", value=user_pool.user_pool_id)
+        CfnOutput(self, "CognitoUserPoolClientId", value=user_pool_client.user_pool_client_id)
+        CfnOutput(self, "CognitoDomain", value=domain.domain_name)
+        CfnOutput(self, "CognitoIssuer", value=issuer_url)
