@@ -1,19 +1,76 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { buildAuthorizeUrl, buildLogoutUrl, isAuthenticated, beginLogin } from '../auth';
+import { isAuthenticated, beginLogout, getDisplayNameFromTokens, buildAuthorizeUrl, buildLogoutUrl, beginLogin, getIdTokenClaims, getAccessTokenClaims } from '../auth';
+import { useAppStore } from '../store/useAppStore';
 
 export default function LayoutSite({ children, showTopStrip = false }) {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [displayName, setDisplayName] = useState(getDisplayNameFromTokens());
+  const [signedIn, setSignedIn] = useState(isAuthenticated());
+  const [open, setOpen] = useState(false);
   const isActive = (pathPrefix) => location.pathname === pathPrefix || location.pathname.startsWith(pathPrefix + '/');
 
   useEffect(() => {
     // Close mobile menu on route change
     setMobileOpen(false);
   }, [location.pathname]);
-  const signedIn = isAuthenticated();
+
+  useEffect(() => {
+    const onStorage = () => {
+      setSignedIn(isAuthenticated());
+      setDisplayName(getDisplayNameFromTokens());
+    };
+    window.addEventListener('storage', onStorage);
+    // also refresh after mount
+    onStorage();
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
+  const onSignOut = (e) => {
+    e.preventDefault();
+    beginLogout();
+  };
+
   const signInUrl = buildAuthorizeUrl();
   const signOutUrl = buildLogoutUrl();
+
+  // Fetch user claims when signed in
+  const { me } = useAppStore();
+  const [claims, setClaims] = useState(null);
+  const [loadingClaims, setLoadingClaims] = useState(false);
+
+  const displayNameFunc = (c) => {
+    if (!c) return 'Account';
+    return c.email || c.name || c.preferred_username || c.username || c['cognito:username'] || 'Account';
+  };
+  const nameLabel = claims ? displayNameFunc(claims) : (displayName || 'Account');
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      if (!signedIn) { setClaims(null); return; }
+      // Optimistic local claims (UI-only) from ID/access tokens
+      const localId = getIdTokenClaims();
+      const localAt = getAccessTokenClaims();
+      if (localId || localAt) {
+        const displayOnly = localId || localAt;
+        if (mounted) setClaims(prev => prev || displayOnly);
+      }
+      setLoadingClaims(true);
+      try {
+        const res = await me();
+        if (mounted) setClaims(res?.claims || null);
+      } catch (e) {
+        // If token invalid/expired, clear UI (user can sign in again)
+        if (mounted) setClaims(null);
+      } finally {
+        if (mounted) setLoadingClaims(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [signedIn, me]);
+
+  // Replace the non-clickable # with a real button
   return (
     <div className="main-wrapper d-flex flex-column" style={{minHeight: '100vh'}}>
       {/* Header Section Start (with top strip) */}
@@ -70,16 +127,27 @@ export default function LayoutSite({ children, showTopStrip = false }) {
                 </ul>
               </div>
 
-              {/* Sign in/up */}
+              {/* Auth controls */}
               <div className="header-sign-in-up d-none d-lg-block">
                 <ul>
                   {!signedIn ? (
-                    <>
-                      <li><a className="sign-in" href={signInUrl} onClick={(e) => { e.preventDefault(); beginLogin(); }}>Sign In</a></li>
-                    </>
+                    <li><a className="sign-in" href={signInUrl} onClick={(e) => { e.preventDefault(); beginLogin(); }}>Sign In</a></li>
+                  ) : claims ? (
+                    <li className="position-relative">
+                      <a href="#" onClick={(e) => e.preventDefault()} className="sign-in">
+                        {nameLabel}
+                        <i className="icofont-rounded-down ms-1" aria-hidden="true"></i>
+                      </a>
+                      <ul className="sub-menu" style={{ right: 0 }}>
+                        <li><span className="dropdown-item-text text-muted" style={{ padding: '8px 16px', display: 'block' }}>{nameLabel}</span></li>
+                        <li><hr className="dropdown-divider" /></li>
+                        <li><a className="sign-in" href={signOutUrl} onClick={(e) => { e.preventDefault(); beginLogout(); }}>Sign Out</a></li>
+                      </ul>
+                    </li>
                   ) : (
                     <>
-                      <li><a className="sign-in" href={signOutUrl}>Sign Out</a></li>
+                      <li><span className="text-muted" style={{ padding: '8px 12px', display: 'inline-block' }}>{loadingClaims ? 'Loading…' : nameLabel}</span></li>
+                      <li><a className="sign-in" href={signOutUrl} onClick={(e) => { e.preventDefault(); beginLogout(); }}>Sign Out</a></li>
                     </>
                   )}
                 </ul>
@@ -117,7 +185,10 @@ export default function LayoutSite({ children, showTopStrip = false }) {
             {!signedIn ? (
               <li><a className="sign-in" href={signInUrl} onClick={(e) => { e.preventDefault(); setMobileOpen(false); beginLogin(); }}>Sign In</a></li>
             ) : (
-              <li><a className="sign-in" href={signOutUrl} onClick={() => setMobileOpen(false)}>Sign Out</a></li>
+              <>
+                <li className="text-muted" style={{ padding: '8px 12px' }}>{displayName}</li>
+                <li><a className="sign-in" href={signOutUrl} onClick={(e) => { e.preventDefault(); setMobileOpen(false); beginLogout(); }}>Sign Out</a></li>
+              </>
             )}
           </ul>
         </div>

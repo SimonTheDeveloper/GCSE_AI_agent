@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { authHeader } from '../auth';
 
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8001';
+const API = process.env.REACT_APP_API_URL || 'http://localhost:8001';
 
 export const useAppStore = create((set, get) => ({
   uid: null,
@@ -11,14 +11,14 @@ export const useAppStore = create((set, get) => ({
   bootstrap: async (deviceId) => {
     let res, data;
     try {
-      res = await fetch(`${API_BASE}/api/v1/users/bootstrap`, {
+      res = await fetch(`${API}/api/v1/users/bootstrap`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeader() },
         body: JSON.stringify({ deviceId }),
       });
     } catch (err) {
   console.error('Bootstrap network error:', err);
-  throw new Error(`Unable to reach API at ${API_BASE}. Is the backend running?`);
+  throw new Error(`Unable to reach API at ${API}. Is the backend running?`);
     }
     if (!res.ok) {
       const text = await res.text();
@@ -32,10 +32,10 @@ export const useAppStore = create((set, get) => ({
   fetchSubjects: async () => {
     let res, data;
     try {
-  res = await fetch(`${API_BASE}/api/v1/subjects`, { headers: { ...authHeader() } });
+  res = await fetch(`${API}/api/v1/subjects`, { headers: { ...authHeader() } });
     } catch (err) {
   console.error('fetchSubjects network error:', err);
-  throw new Error(`Unable to reach API at ${API_BASE}. Is the backend running?`);
+  throw new Error(`Unable to reach API at ${API}. Is the backend running?`);
     }
     if (!res.ok) {
       const text = await res.text();
@@ -53,14 +53,14 @@ export const useAppStore = create((set, get) => ({
   if (!uid) throw new Error('No uid');
     let res, data;
     try {
-      res = await fetch(`${API_BASE}/api/v1/quiz/start`, {
+      res = await fetch(`${API}/api/v1/quiz/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeader() },
         body: JSON.stringify({ uid, topicId, numQuestions })
       });
     } catch (err) {
   console.error('startQuiz network error:', err);
-  throw new Error(`Unable to reach API at ${API_BASE}. Is the backend running?`);
+  throw new Error(`Unable to reach API at ${API}. Is the backend running?`);
     }
     if (!res.ok) {
       const text = await res.text();
@@ -78,14 +78,14 @@ export const useAppStore = create((set, get) => ({
     if (!q || !q.quizId) throw new Error('No active quiz to submit. Please start a new quiz.');
     let res, data;
     try {
-      res = await fetch(`${API_BASE}/api/v1/quiz/submit`, {
+      res = await fetch(`${API}/api/v1/quiz/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeader() },
         body: JSON.stringify({ uid, quizId: q.quizId, answers })
       });
     } catch (err) {
       console.error('submitQuiz network error:', err);
-      throw new Error(`Unable to reach API at ${API_BASE}. Is the backend running?`);
+      throw new Error(`Unable to reach API at ${API}. Is the backend running?`);
     }
     if (!res.ok) {
       const text = await res.text();
@@ -99,10 +99,10 @@ export const useAppStore = create((set, get) => ({
     const uid = get().uid;
     let res;
     try {
-  res = await fetch(`${API_BASE}/api/v1/review/next?uid=${encodeURIComponent(uid)}`, { headers: { ...authHeader() } });
+  res = await fetch(`${API}/api/v1/review/next?uid=${encodeURIComponent(uid)}`, { headers: { ...authHeader() } });
     } catch (err) {
   console.error('fetchReviewNext network error:', err);
-  throw new Error(`Unable to reach API at ${API_BASE}. Is the backend running?`);
+  throw new Error(`Unable to reach API at ${API}. Is the backend running?`);
     }
     if (!res.ok) {
       const text = await res.text();
@@ -114,15 +114,37 @@ export const useAppStore = create((set, get) => ({
   me: async () => {
     let res;
     try {
-      res = await fetch(`${API_BASE}/api/v1/me`, { headers: { ...authHeader() } });
+      res = await fetch(`${API}/api/v1/me`, { headers: { ...authHeader() } });
     } catch (err) {
       console.error('me network error:', err);
-      throw new Error(`Unable to reach API at ${API_BASE}. Is the backend running?`);
+      throw new Error(`Unable to reach API at ${API}. Is the backend running?`);
     }
     if (!res.ok) {
       const text = await res.text();
       throw new Error(`me failed: ${res.status} ${res.statusText} - ${text}`);
     }
     return res.json();
-  }
+  },
+
+  loadProgress: async (topicId) => {
+    const qs = topicId ? `?topicId=${encodeURIComponent(topicId)}` : '';
+    const res = await fetch(`${API}/api/v1/progress${qs}`, { headers: { ...authHeader() } });
+    if (!res.ok) throw new Error(`Load progress failed: ${res.status}`);
+    const data = await res.json();
+    set({ progress: data.items });
+    return data.items;
+  },
+
+  updateProgress: async (payload) => {
+    const res = await fetch(`${API}/api/v1/progress`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeader() },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`Update progress failed: ${res.status}`);
+    const item = await res.json();
+    // Optionally merge into state:
+    set({ progress: [...(get().progress || []).filter(p => !(p.topicId===item.topicId && p.exerciseId===item.exerciseId)), item] });
+    return item;
+  },
 }));

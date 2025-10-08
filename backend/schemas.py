@@ -1,5 +1,6 @@
-from typing import List
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
+from datetime import datetime
 
 
 class BootstrapReq(BaseModel):
@@ -99,4 +100,22 @@ class HomeworkSubmitRes(BaseModel):
     aiHelp: str | None = None
     files: List[str] = []
     warnings: List[str] = []
+
+class ProgressUpdateReq(BaseModel):
+    topicId: str
+    exerciseId: str
+    status: str  # e.g., "started" | "completed" | "correct" | "incorrect"
+    score: Optional[float] = None
+    meta: Optional[Dict[str, Any]] = None
+    occurredAt: Optional[datetime] = None  # optional client timestamp
+
+class ProgressItem(BaseModel):
+    topicId: str
+    exerciseId: str
+    status: str
+    score: Optional[float] = None
+    updatedAt: datetime
+
+class ProgressGetRes(BaseModel):
+    items: List[ProgressItem]
 

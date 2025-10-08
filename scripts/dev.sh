@@ -41,10 +41,10 @@ start_backend() (
 
   if [ -x "$ROOT_VENV_PY" ] && [ -x "$ROOT_VENV_PIP" ]; then
     echo "[dev] using repo root .venv ($ROOT_VENV_DIR)"
-    if ! "$ROOT_VENV_PY" -c 'import fastapi, uvicorn, boto3, dotenv, pydantic, multipart; import openai, pytesseract; from PIL import Image as _Img' >/dev/null 2>&1; then
+    if ! "$ROOT_VENV_PY" -c 'import fastapi, uvicorn, boto3, dotenv, pydantic, multipart, requests; import openai, pytesseract; from PIL import Image as _Img; import jose' >/dev/null 2>&1; then
       echo "[dev] installing backend deps into root .venv"
       "$ROOT_VENV_PIP" install --upgrade pip >/dev/null 2>&1 || true
-      "$ROOT_VENV_PIP" install fastapi uvicorn boto3 python-dotenv pydantic python-multipart pillow pytesseract openai
+      "$ROOT_VENV_PIP" install fastapi uvicorn boto3 python-dotenv pydantic python-multipart pillow pytesseract openai requests 'python-jose[cryptography]'
     fi
     if ! command -v tesseract >/dev/null 2>&1; then
       echo "[dev] note: 'tesseract' binary not found; OCR will be disabled until you install it (e.g. 'brew install tesseract')"
@@ -54,10 +54,10 @@ start_backend() (
       "$ROOT_VENV_PY" -m uvicorn main:app --reload --host 0.0.0.0 --port 8001
   elif [ -x "$VENV_PY" ] && [ -x "$VENV_PIP" ]; then
     echo "[dev] using backend .venv ($VENV_DIR)"
-    if ! "$VENV_PY" -c 'import fastapi, uvicorn, boto3, dotenv, pydantic, multipart; import openai, pytesseract; from PIL import Image as _Img' >/dev/null 2>&1; then
+    if ! "$VENV_PY" -c 'import fastapi, uvicorn, boto3, dotenv, pydantic, multipart, requests; import openai, pytesseract; from PIL import Image as _Img; import jose' >/dev/null 2>&1; then
       echo "[dev] installing backend deps into backend .venv"
       "$VENV_PIP" install --upgrade pip >/dev/null 2>&1 || true
-      "$VENV_PIP" install fastapi uvicorn boto3 python-dotenv pydantic python-multipart pillow pytesseract openai
+      "$VENV_PIP" install fastapi uvicorn boto3 python-dotenv pydantic python-multipart pillow pytesseract openai requests 'python-jose[cryptography]'
     fi
     if ! command -v tesseract >/dev/null 2>&1; then
       echo "[dev] note: 'tesseract' binary not found; OCR will be disabled until you install it (e.g. 'brew install tesseract')"
@@ -73,9 +73,9 @@ start_backend() (
       poetry run uvicorn main:app --reload --host 0.0.0.0 --port 8001
   else
     echo "[dev] ensuring backend deps with pip"
-    if ! python3 -c 'import fastapi, uvicorn, boto3, dotenv, pydantic, multipart; import openai, pytesseract; from PIL import Image as _Img' >/dev/null 2>&1; then
+    if ! python3 -c 'import fastapi, uvicorn, boto3, dotenv, pydantic, multipart, requests; import openai, pytesseract; from PIL import Image as _Img; import jose' >/dev/null 2>&1; then
       pip3 install --upgrade pip >/dev/null 2>&1 || true
-      pip3 install fastapi uvicorn boto3 python-dotenv pydantic python-multipart pillow pytesseract openai
+      pip3 install fastapi uvicorn boto3 python-dotenv pydantic python-multipart pillow pytesseract openai requests 'python-jose[cryptography]'
     fi
     if ! command -v tesseract >/dev/null 2>&1; then
       echo "[dev] note: 'tesseract' binary not found; OCR will be disabled until you install it (e.g. 'brew install tesseract')"

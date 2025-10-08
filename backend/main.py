@@ -7,6 +7,9 @@ from uuid import uuid4
 from dotenv import load_dotenv
 import db
 import shutil
+import schemas
+from auth import get_default_verifier
+from auth import get_current_principal
 
 from db import (
     get_user_profile, put_user_profile, get_uid_by_device,
@@ -15,7 +18,7 @@ from db import (
     save_quiz_result, recent_wrong_cards,
 )
 
-from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form, Depends
+from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 
 from schemas import (BootstrapReq, BootstrapRes, BreakdownItem, Card,
@@ -23,7 +26,7 @@ from schemas import (BootstrapReq, BootstrapRes, BreakdownItem, Card,
                         QuizSubmitRes, ReviewDueGroup, ReviewNextRes,
                         SubjectWithTopics, TopicCardsRes, TopicStub,
                         HomeworkSubmitRes)
-from auth import get_default_verifier
+
 
 
 logging.basicConfig(level=logging.INFO)
@@ -43,6 +46,46 @@ ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
 ]
+
+# Optional access controls (set via environment to enable)
+_ALLOWED_EMAILS = {x.strip().lower() for x in os.getenv("ALLOWED_EMAILS", "").split(",") if x.strip()}
+_ALLOWED_DOMAINS = {x.strip().lower().lstrip("@") for x in os.getenv("ALLOWED_DOMAINS", "").split(",") if x.strip()}
+_REQUIRED_GROUP = os.getenv("REQUIRED_GROUP", "").strip()
+
+def _user_is_allowed(claims: dict) -> bool:
+    """Evaluate optional allowlist/group rules from environment.
+
+    If no rules are set, allow everyone with a valid token.
+    """
+    # Require group if set
+    if _REQUIRED_GROUP:
+        groups = claims.get("cognito:groups") or []
+        # Accept string or list
+        if isinstance(groups, str):
+            groups = [groups]
+        if _REQUIRED_GROUP not in groups:
+            return False
+
+    # If an explicit email allowlist is provided, enforce it strictly
+    if _ALLOWED_EMAILS:
+        email = (claims.get("email") or "").lower().strip()
+        username = (claims.get("username") or claims.get("cognito:username") or "").lower().strip()
+        if email and email in _ALLOWED_EMAILS:
+            return True
+        if username and username in _ALLOWED_EMAILS:
+            return True
+        return False
+
+    # Otherwise, if domain allowlist is provided, enforce it
+    if _ALLOWED_DOMAINS:
+        email = (claims.get("email") or "").lower().strip()
+        if not email or "@" not in email:
+            return False
+        domain = email.split("@", 1)[1]
+        return domain in _ALLOWED_DOMAINS
+
+    # No rules configured => allow
+    return True
 
 # Add CORS middleware
 app.add_middleware(
@@ -118,11 +161,18 @@ def _get_claims_from_auth_header(request: Request):
     if not verifier:
         raise HTTPException(status_code=503, detail="Cognito not configured")
     auth = request.headers.get("Authorization")
-    if not auth or not auth.lower().startswith("bearer "):
+    token = None
+    if auth and auth.lower().startswith("bearer "):
+        token = auth.split(" ", 1)[1].strip()
+    # Optional fallback: allow id_token access via query for debugging the flow
+    if not token:
+        token = request.query_params.get("id_token")
+    if not token:
         raise HTTPException(status_code=401, detail="Missing bearer token")
-    token = auth.split(" ", 1)[1].strip()
     try:
         claims = verifier.verify(token)
+        if not _user_is_allowed(claims):
+            raise HTTPException(status_code=403, detail="User not allowed. Please contact the administrator.")
         return claims
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
@@ -455,5 +505,34 @@ async def homework_submit(
         files=saved_names,
         warnings=warnings,
     )
+
+
+@app.post("/api/v1/progress", response_model=schemas.ProgressItem)
+def update_progress(req: schemas.ProgressUpdateReq, p = Depends(get_current_principal)):
+    if not p:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+    saved = db.save_progress(p.sub, req.dict())
+    return schemas.ProgressItem(
+        topicId=saved["topicId"],
+        exerciseId=saved["exerciseId"],
+        status=saved["status"],
+        score=saved.get("score"),
+        updatedAt=datetime.fromtimestamp(saved["updatedAt"], tz=timezone.utc),
+    )
+
+@app.get("/api/v1/progress", response_model=schemas.ProgressGetRes)
+def list_progress(topicId: str | None = None, p = Depends(get_current_principal)):
+    if not p:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+    items = db.get_progress(p.sub, topicId)
+    return schemas.ProgressGetRes(items=[
+        schemas.ProgressItem(
+            topicId=i["topicId"],
+            exerciseId=i["exerciseId"],
+            status=i["status"],
+            score=i.get("score"),
+            updatedAt=datetime.fromtimestamp(i["updatedAt"], tz=timezone.utc),
+        ) for i in items
+    ])
 
 

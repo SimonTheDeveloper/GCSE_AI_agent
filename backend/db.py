@@ -161,3 +161,38 @@ def recent_wrong_cards(uid: str, limit_results: int = 10) -> Dict[str, set]:
                 if topic_id and qid:
                     topic_to_cards.setdefault(topic_id, set()).add(qid)
     return topic_to_cards
+
+# Progress helpers
+def save_progress(user_id: str, item: dict) -> dict:
+    import time as _time
+    now = int(_time.time())
+    pk = f"USER#{user_id}"
+    sk = f"PROGRESS#{item['topicId']}#{item['exerciseId']}"
+    put = {
+        "PK": pk,
+        "SK": sk,
+        "Type": "Progress",
+        "topicId": item["topicId"],
+        "exerciseId": item["exerciseId"],
+        "status": item.get("status", "unknown"),
+        "score": item.get("score"),
+        "meta": item.get("meta"),
+        "updatedAt": now,
+        "GSI1PK": f"PROGRESS#{item['topicId']}",
+        "GSI1SK": now,
+    }
+    _table.put_item(Item=put)
+    return put
+
+def get_progress(user_id: str, topic_id: str | None = None) -> list[dict]:
+    pk = f"USER#{user_id}"
+    if topic_id:
+        prefix = f"PROGRESS#{topic_id}#"
+        resp = _table.query(
+            KeyConditionExpression=Key("PK").eq(pk) & Key("SK").begins_with(prefix)
+        )
+    else:
+        resp = _table.query(
+            KeyConditionExpression=Key("PK").eq(pk) & Key("SK").begins_with("PROGRESS#")
+        )
+    return resp.get("Items", [])

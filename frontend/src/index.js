@@ -3,15 +3,31 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import { captureTokensFromHash, captureCodeFromQuery } from './auth';
+import { handleAuthCallbackCode, captureTokensFromHash } from './auth';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 function Root() {
   useEffect(() => {
     // Try code flow exchange first; if not code, try implicit hash capture
     (async () => {
-      const codeRes = await captureCodeFromQuery();
-      if (!codeRes) captureTokensFromHash();
+      try {
+        await handleAuthCallbackCode();
+      } catch (e) {
+        console.warn('Token exchange failed', e);
+      } finally {
+        captureTokensFromHash();
+        // If we have a post-auth return path, navigate there once on boot
+        try {
+          const returnTo = sessionStorage.getItem('post_auth_return_to');
+          if (returnTo) {
+            sessionStorage.removeItem('post_auth_return_to');
+            if (window.location.pathname + window.location.search !== returnTo) {
+              window.history.replaceState(null, '', returnTo);
+            }
+          }
+        } catch {}
+        // render after we’ve captured tokens and possibly redirected
+      }
     })();
   }, []);
   return (

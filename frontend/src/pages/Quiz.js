@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
+import { isAuthenticated } from '../auth';
 
 export default function Quiz() {
   const { quizId } = useParams();
   const navigate = useNavigate();
-  const { currentQuiz, submitQuiz } = useAppStore();
+  const { currentQuiz, submitQuiz, updateProgress } = useAppStore();
   const [answers, setAnswers] = useState({});
   const [currentIdx, setCurrentIdx] = useState(0);
   // Track per-question eliminated options for hints and skipped questions
@@ -64,6 +65,22 @@ export default function Quiz() {
     }
     const payload = Object.entries(answers).map(([questionId, choiceIndex]) => ({ questionId, choiceIndex }));
     const res = await submitQuiz(payload);
+    // Record progress if signed in (non-blocking)
+    if (isAuthenticated()) {
+      try {
+        const finalScoreFraction = total > 0 ? (res?.score ?? 0) / total : 0;
+        await updateProgress({
+          topicId: currentQuiz?.topicId,
+          exerciseId: quizId,
+          status: 'completed',
+          score: finalScoreFraction,
+          meta: { total: total, correct: res?.score ?? 0 },
+        });
+      } catch (e) {
+        // Do not block navigation on progress logging errors
+      }
+    }
+ 
     // Build client-side meta for skipped vs unanswered
     const allIds = questions.map(q => q.id);
     const answeredIds = Object.keys(answers);

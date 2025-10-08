@@ -10,6 +10,7 @@ import Review from './pages/Review';
 import Subjects from './pages/Subjects';
 import SubjectsDetail from './pages/SubjectsDetail';
 import Homework from './pages/Homework';
+import RequireAuth from './components/RequireAuth';
 import LayoutSite from './layouts/LayoutSite';
 import AppBootstrap from './components/AppBootstrap';
 
@@ -26,7 +27,7 @@ function App() {
             <Route path="/quiz/:quizId" element={<Quiz />} />
             <Route path="/results/:quizId" element={<Results />} />
             <Route path="/review" element={<Review />} />
-            <Route path="/homework" element={<Homework />} />
+            <Route path="/homework" element={<RequireAuth><Homework /></RequireAuth>} />
           </Routes>
         </AppBootstrap>
       </LayoutSite>
