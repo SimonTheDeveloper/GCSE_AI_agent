@@ -101,6 +101,21 @@ class HomeworkSubmitRes(BaseModel):
     files: List[str] = []
     warnings: List[str] = []
 
+
+class HomeworkHelpJsonReq(BaseModel):
+    '''Request schema for generating structured help JSON.'''
+    uid: str
+    text: str
+    yearGroup: int | None = 9
+    tier: str = "unknown"
+    desiredHelpLevel: str = "auto"
+    useCache: bool = True
+
+
+class HomeworkHelpJsonRes(BaseModel):
+    '''Response schema for structured help JSON generation.'''
+    result: Dict[str, Any]
+
 class ProgressUpdateReq(BaseModel):
     topicId: str
     exerciseId: str

@@ -25,7 +25,7 @@ from schemas import (BootstrapReq, BootstrapRes, BreakdownItem, Card,
                         NextSteps, Question, QuizStartReq, QuizStartRes, QuizSubmitReq,
                         QuizSubmitRes, ReviewDueGroup, ReviewNextRes,
                         SubjectWithTopics, TopicCardsRes, TopicStub,
-                        HomeworkSubmitRes)
+                        HomeworkSubmitRes, HomeworkHelpJsonReq, HomeworkHelpJsonRes)
 
 
 
@@ -413,11 +413,20 @@ def _safe_import_openai():
         return None
 
 
+def _safe_import_gcse_help_generator():
+    try:
+        from gcse_help_generator import GCSEHelpError, GCSEHelpGenerator
+
+        return GCSEHelpGenerator, GCSEHelpError
+    except Exception:
+        return None, None
+
+
 @app.post("/api/v1/homework/submit", response_model=HomeworkSubmitRes)
 async def homework_submit(
     uid: str = Form(...),
     question: str = Form(""),
-    files: list[UploadFile] = File(default_factory=list),
+    files: list[UploadFile] = File(default=[])
 ):
     # Validate uid exists (optional if anonymous allowed)
     if not get_user_profile(uid):
@@ -505,6 +514,36 @@ async def homework_submit(
         files=saved_names,
         warnings=warnings,
     )
+
+
+@app.post("/api/v1/homework/help-json", response_model=HomeworkHelpJsonRes)
+def homework_help_json(req: HomeworkHelpJsonReq):
+    # Validate uid exists (optional if anonymous allowed)
+    if not get_user_profile(req.uid):
+        raise HTTPException(status_code=404, detail="User not found")
+
+    GCSEHelpGenerator, GCSEHelpError = _safe_import_gcse_help_generator()
+    if GCSEHelpGenerator is None or GCSEHelpError is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Structured help not available: failed to import generator",
+        )
+
+    try:
+        gen = GCSEHelpGenerator()
+        result = gen.generate(
+            raw_text=req.text,
+            uid=req.uid,
+            year_group=req.yearGroup,
+            tier=req.tier,
+            desired_help_level=req.desiredHelpLevel,
+            use_cache=req.useCache,
+        )
+        return HomeworkHelpJsonRes(result=result)
+    except GCSEHelpError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Help generation failed: {e}") from e
 
 
 @app.post("/api/v1/progress", response_model=schemas.ProgressItem)
