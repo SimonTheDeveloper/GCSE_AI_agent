@@ -41,6 +41,8 @@ export function HomeworkSubmission({ onViewProblem }: HomeworkSubmissionProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState('type');
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [lastError, setLastError] = useState<string | null>(null);
+  const [rawApiResponse, setRawApiResponse] = useState<any>(null);
 
   const processHomework = async () => {
     if (!textInput.trim()) {
@@ -50,6 +52,7 @@ export function HomeworkSubmission({ onViewProblem }: HomeworkSubmissionProps) {
 
     setIsProcessing(true);
     setProcessingProgress(20);
+    setLastError(null);
     toast.info('Sending to backend...');
 
     try {
@@ -64,12 +67,19 @@ export function HomeworkSubmission({ onViewProblem }: HomeworkSubmissionProps) {
         useCache: true,
       });
 
+      setRawApiResponse(res);
       setProcessingProgress(80);
 
       const tiers = res?.result?.help?.tiers;
-      const stepsText: string[] = (tiers?.steps?.content || [])
-        .map((b: any) => (typeof b?.text === 'string' ? b.text : ''))
-        .filter((t: string) => t.trim().length > 0);
+
+      // Parse steps with their expected answers
+      const stepsContent = tiers?.steps?.content || [];
+      const stepsWithAnswers = stepsContent
+        .filter((b: any) => typeof b?.text === 'string' && b.text.trim().length > 0)
+        .map((b: any) => ({
+          text: b.text,
+          expectedAnswer: b.expectedAnswer || '',
+        }));
 
       const hintText: string = (tiers?.hint?.content || [])
         .map((b: any) => (typeof b?.text === 'string' ? b.text : ''))
@@ -87,14 +97,15 @@ export function HomeworkSubmission({ onViewProblem }: HomeworkSubmissionProps) {
         difficulty: 'Medium',
         category: (res?.result?.analysis?.subject || 'Maths') as string,
         question: textInput,
-        steps: (stepsText.length ? stepsText : ['Read the question carefully and write down what you know.']).map(
-          (t: string, idx: number) => ({
-            stepNumber: idx + 1,
-            prompt: t,
-            expectedAnswer: '',
-            hint: hintText || 'Try the next step if you are stuck.',
-          })
-        ),
+        steps: (stepsWithAnswers.length 
+          ? stepsWithAnswers 
+          : [{ text: 'Read the question carefully and write down what you know.', expectedAnswer: '' }]
+        ).map((step, idx: number) => ({
+          stepNumber: idx + 1,
+          prompt: step.text,
+          expectedAnswer: step.expectedAnswer,
+          hint: hintText || 'Try the next step if you are stuck.',
+        })),
         explanation: {
           overview: overviewText || 'Here is a clear explanation of how to approach this problem.',
           stepByStep: [
@@ -121,7 +132,10 @@ export function HomeworkSubmission({ onViewProblem }: HomeworkSubmissionProps) {
       setProcessingProgress(100);
       toast.success('Problem processed successfully!');
     } catch (e: any) {
-      toast.error(`Processing failed: ${e?.message || e}`);
+      const msg = e?.message || String(e);
+      setLastError(msg);
+      setProcessingProgress(0);
+      toast.error(`Processing failed: ${msg}`);
     } finally {
       setIsProcessing(false);
     }
@@ -198,6 +212,7 @@ export function HomeworkSubmission({ onViewProblem }: HomeworkSubmissionProps) {
         textInput={textInput}
         uploadedFiles={uploadedFiles}
         pastedImage={pastedImage}
+        rawApiResponse={rawApiResponse}
         onSubmitAnother={handleSubmitAnother}
         onViewProblem={onViewProblem}
         problemPreview={
@@ -214,6 +229,7 @@ export function HomeworkSubmission({ onViewProblem }: HomeworkSubmissionProps) {
 
   return (
     <HomeworkSubmissionView
+      error={lastError}
       textInput={textInput}
       uploadedFiles={uploadedFiles}
       pastedImage={pastedImage}

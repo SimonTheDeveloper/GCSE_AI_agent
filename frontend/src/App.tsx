@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { mathProblems } from './test_data/mathProblems';
 import { MathProblem } from './components/MathProblem';
 import { ExplanationPanel } from './components/ExplanationPanel';
@@ -16,13 +17,13 @@ import { toast } from 'sonner';
 
  
 
-type PageView = 'home' | 'practice' | 'homework';
 type AuthView = 'login' | 'signup';
 
 export default function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authView, setAuthView] = useState<AuthView>('login');
-  const [currentPage, setCurrentPage] = useState<PageView>('home');
   const [currentProblemId, setCurrentProblemId] = useState(1);
   const [showExplanation, setShowExplanation] = useState(false);
   const [solvedProblems, setSolvedProblems] = useState<number[]>([]);
@@ -82,7 +83,7 @@ export default function App() {
     localStorage.removeItem('rememberMe');
     setIsLoggedIn(false);
     setAuthView('login');
-    setCurrentPage('home');
+    navigate('/');
     toast.success('Logged out successfully');
   };
 
@@ -153,55 +154,53 @@ export default function App() {
     );
   }
 
-  if (currentPage === 'home') {
-    return (
-      <div className="min-h-screen">
-        <div className="bg-white border-b sticky top-0 z-50">
-          <div className="container mx-auto px-6 py-4">
-            <Navigation 
-              onLogoClick={() => setCurrentPage('home')} 
-              onHomeworkClick={() => setCurrentPage('homework')}
-              onLogout={handleLogout}
-            />
-          </div>
-        </div>
-        <Homepage onStartPractice={() => setCurrentPage('practice')} />
-        <Toaster position="bottom-right" />
-      </div>
-    );
-  }
-
-  if (currentPage === 'homework') {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="bg-white border-b sticky top-0 z-50">
-          <div className="container mx-auto px-6">
-            <Navigation 
-              onLogoClick={() => setCurrentPage('home')} 
-              onHomeworkClick={() => setCurrentPage('homework')}
-              onLogout={handleLogout}
-            />
-          </div>
-        </div>
-        <HomeworkSubmission onViewProblem={() => setCurrentPage('practice')} />
-        <Toaster position="bottom-right" />
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b sticky top-0 z-50">
-        <div className="container mx-auto px-6">
-          <Navigation 
-            onLogoClick={() => setCurrentPage('home')} 
-            onHomeworkClick={() => setCurrentPage('homework')}
-            onLogout={handleLogout}
-          />
+    <Routes>
+      <Route path="/" element={
+        <div className="min-h-screen">
+          <div className="bg-white border-b sticky top-0 z-50">
+            <div className="container mx-auto px-6 py-4">
+              <Navigation 
+                onLogoClick={() => navigate('/')} 
+                onHomeworkClick={() => navigate('/homework')}
+                onLogout={handleLogout}
+              />
+            </div>
+          </div>
+          <Homepage onStartPractice={() => navigate('/practice')} />
+          <Toaster position="bottom-right" />
         </div>
-      </div>
+      } />
+      
+      <Route path="/homework" element={
+        <div className="min-h-screen bg-gray-50">
+          <div className="bg-white border-b sticky top-0 z-50">
+            <div className="container mx-auto px-6">
+              <Navigation 
+                onLogoClick={() => navigate('/')} 
+                onHomeworkClick={() => navigate('/homework')}
+                onLogout={handleLogout}
+              />
+            </div>
+          </div>
+          <HomeworkSubmission onViewProblem={() => navigate('/practice')} />
+          <Toaster position="bottom-right" />
+        </div>
+      } />
 
-      <div className="container mx-auto px-6 py-6">
+      <Route path="/practice" element={
+        <div className="min-h-screen bg-gray-50">
+          <div className="bg-white border-b sticky top-0 z-50">
+            <div className="container mx-auto px-6">
+              <Navigation 
+                onLogoClick={() => navigate('/')} 
+                onHomeworkClick={() => navigate('/homework')}
+                onLogout={handleLogout}
+              />
+            </div>
+          </div>
+
+          <div className="container mx-auto px-6 py-6">
         <ResizablePanelGroup direction="horizontal" className="min-h-[calc(100vh-120px)] rounded-lg border bg-white">
           {!isPanelCollapsed && (
             <>
@@ -274,7 +273,7 @@ export default function App() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setCurrentPage('home')}
+                    onClick={() => navigate('/')}
                     className="gap-2"
                   >
                     <Home className="h-4 w-4" />
@@ -324,8 +323,10 @@ export default function App() {
             </>
           )}
         </ResizablePanelGroup>
-      </div>
-      <Toaster position="bottom-right" />
-    </div>
+          </div>
+          <Toaster position="bottom-right" />
+        </div>
+      } />
+    </Routes>
   );
 }

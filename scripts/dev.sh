@@ -24,8 +24,8 @@ run_prefixed() {
   local logfile="$1"; shift
   # stdout and stderr prefixed and tee'd to logfile
   exec "$@" \
-    > >(awk -v p="$prefix" '{ print p, $0 }' | tee -a "$logfile") \
-    2> >(awk -v p="$prefix" '{ print p, $0 }' | tee -a "$logfile" >&2)
+    > >(awk -v p="$prefix" '{ cmd="date -u +\"%Y-%m-%dT%H:%M:%SZ\""; cmd | getline ts; close(cmd); print ts, p, $0 }' | tee -a "$logfile") \
+    2> >(awk -v p="$prefix" '{ cmd="date -u +\"%Y-%m-%dT%H:%M:%SZ\""; cmd | getline ts; close(cmd); print ts, p, $0 }' | tee -a "$logfile" >&2)
 }
 
 start_backend() (

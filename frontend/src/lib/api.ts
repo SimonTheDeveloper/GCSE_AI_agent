@@ -34,8 +34,16 @@ export async function postHomeworkHelpJson(req: HomeworkHelpJsonReq): Promise<Ho
   });
 
   if (!resp.ok) {
-    const text = await resp.text().catch(() => '');
-    throw new Error(text || `Request failed (${resp.status})`);
+    // FastAPI typically returns {"detail": "..."} on errors.
+    let message = '';
+    try {
+      const data = (await resp.json()) as any;
+      if (data && typeof data.detail === 'string') message = data.detail;
+    } catch {
+      // fall back to text
+      message = await resp.text().catch(() => '');
+    }
+    throw new Error(message || `Request failed (${resp.status})`);
   }
 
   return (await resp.json()) as HomeworkHelpJsonRes;

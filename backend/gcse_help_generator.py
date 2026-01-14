@@ -2,14 +2,21 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from json import JSONDecodeError
+
 import time
+
+
+logger = logging.getLogger(__name__)
 
 
 def _now_iso() -> str:
@@ -83,6 +90,15 @@ class GCSEHelpGenerator:
         if self._config.cache_backend == "dynamodb":
             self._dynamo_table = self._safe_get_dynamodb_table()
 
+        logger.info(
+            "gcse_help_generator.init cache_backend=%s model=%s schema_version=%s dynamo_table=%s dynamo_ready=%s",
+            self._config.cache_backend,
+            self._config.model,
+            self._config.schema_version,
+            self._config.dynamodb_table_name,
+            bool(self._dynamo_table) if self._config.cache_backend == "dynamodb" else False,
+        )
+
     @property
     def config(self) -> GCSEHelpGeneratorConfig:
         return self._config
@@ -98,13 +114,25 @@ class GCSEHelpGenerator:
             )
             return dynamodb.Table(self._config.dynamodb_table_name)
         except Exception:
+            logger.exception(
+                "gcse_help_generator.dynamo_unavailable table=%s region=%s endpoint_url=%s",
+                self._config.dynamodb_table_name,
+                self._config.dynamodb_region,
+                self._config.dynamodb_endpoint_url,
+            )
             return None
 
     def _load_cache(self, path: Path) -> Dict[str, Any]:
         try:
             if path.exists():
-                return json.loads(path.read_text(encoding="utf-8"))
+                data = json.loads(path.read_text(encoding="utf-8"))
+                if isinstance(data, dict):
+                    logger.info("gcse_help_generator.json_cache_loaded path=%s entries=%s", str(path), len(data))
+                    return data
+                logger.warning("gcse_help_generator.json_cache_invalid path=%s", str(path))
+                return {}
         except Exception:
+            logger.exception("gcse_help_generator.json_cache_load_failed path=%s", str(path))
             return {}
         return {}
 
@@ -115,8 +143,14 @@ class GCSEHelpGenerator:
                 json.dumps(self._cache, indent=2, ensure_ascii=False),
                 encoding="utf-8",
             )
+            logger.info(
+                "gcse_help_generator.json_cache_saved path=%s entries=%s",
+                str(self._config.cache_path),
+                len(self._cache),
+            )
         except Exception:
             # Cache is an optimization; generation should still succeed.
+            logger.exception("gcse_help_generator.json_cache_save_failed path=%s", str(self._config.cache_path))
             pass
 
     def _dynamo_key(self, cache_key: str) -> Dict[str, str]:
@@ -143,12 +177,16 @@ class GCSEHelpGenerator:
             result = item.get("result")
             return result if isinstance(result, dict) else None
         except Exception:
+            logger.exception("gcse_help_generator.dynamo_get_failed")
             return None
 
     def _dynamo_put(self, cache_key: str, *, normalized_text: str, result: Dict[str, Any]) -> None:
         if not self._dynamo_table:
             return
         try:
+            # Convert all floats to Decimals for DynamoDB compatibility
+            result_for_dynamo = convert_floats_to_decimal(result)
+            
             item: Dict[str, Any] = {
                 **self._dynamo_key(cache_key),
                 "Type": "CacheEntry",
@@ -156,14 +194,19 @@ class GCSEHelpGenerator:
                 "schemaVersion": self._config.schema_version,
                 "normalizedText": normalized_text,
                 "createdAt": _now_iso(),
-                "result": result,
+                "result": result_for_dynamo,
             }
             if self._config.cache_ttl_seconds:
                 item["expiresAt"] = int(time.time()) + int(self._config.cache_ttl_seconds)
 
             self._dynamo_table.put_item(Item=item)
+            logger.info(
+                "gcse_help_generator.dynamo_put_ok ttl_seconds=%s",
+                self._config.cache_ttl_seconds,
+            )
         except Exception:
             # Cache is an optimization; generation should still succeed.
+            logger.exception("gcse_help_generator.dynamo_put_failed")
             return
 
     def _safe_import_openai(self):
@@ -192,6 +235,42 @@ class GCSEHelpGenerator:
         if not nt or not isinstance(nt, str):
             raise GCSEHelpError("exercise.prompt.normalized_text missing or invalid")
 
+    def _extract_first_json_object(self, s: str) -> str:
+        """Extract the first complete JSON object from a string.
+
+        Useful when LLM output includes fences/prose around the JSON.
+        """
+        start = s.find("{")
+        if start == -1:
+            raise GCSEHelpError("Model output did not contain a JSON object")
+
+        depth = 0
+        in_str = False
+        escape = False
+        for i in range(start, len(s)):
+            ch = s[i]
+            if in_str:
+                if escape:
+                    escape = False
+                elif ch == "\\":
+                    escape = True
+                elif ch == '"':
+                    in_str = False
+                continue
+
+            if ch == '"':
+                in_str = True
+                continue
+
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    return s[start : i + 1]
+
+        raise GCSEHelpError("Model output contained incomplete JSON")
+
     def generate(
         self,
         *,
@@ -204,21 +283,47 @@ class GCSEHelpGenerator:
         desired_help_level: str = "auto",
         use_cache: bool = True,
     ) -> Dict[str, Any]:
+        start = time.perf_counter()
         normalized_text = normalize_exercise_text(raw_text)
         if not normalized_text:
             raise GCSEHelpError("No exercise text provided")
 
         key = exercise_hash(normalized_text, schema_version=self._config.schema_version)
+        text_len = len(normalized_text)
+        key_short = key[:12]
+        logger.info(
+            "gcse_help_generator.generate_start cache=%s backend=%s key=%s text_len=%s year_group=%s tier=%s desired=%s",
+            bool(use_cache),
+            self._config.cache_backend,
+            key_short,
+            text_len,
+            year_group,
+            tier,
+            desired_help_level,
+        )
         if use_cache:
             if self._config.cache_backend == "dynamodb":
+                cache_start = time.perf_counter()
                 cached = self._dynamo_get(key)
                 if cached is not None:
+                    logger.info(
+                        "gcse_help_generator.cache_hit backend=dynamodb key=%s ms=%d",
+                        key_short,
+                        int((time.perf_counter() - cache_start) * 1000),
+                    )
                     return cached
+                logger.info(
+                    "gcse_help_generator.cache_miss backend=dynamodb key=%s ms=%d",
+                    key_short,
+                    int((time.perf_counter() - cache_start) * 1000),
+                )
             elif self._config.cache_backend == "json":
                 if key in self._cache:
                     cached = self._cache[key]
                     if isinstance(cached, dict):
+                        logger.info("gcse_help_generator.cache_hit backend=json key=%s", key_short)
                         return cached
+                logger.info("gcse_help_generator.cache_miss backend=json key=%s", key_short)
 
         api_key = os.environ.get("OPENAI_API_KEY")
         if not api_key:
@@ -268,7 +373,7 @@ class GCSEHelpGenerator:
                 "tiers": {
                     "nudge": {"title": "", "content": [{"type": "plain", "text": ""}]},
                     "hint": {"title": "", "content": [{"type": "plain", "text": ""}]},
-                    "steps": {"title": "", "content": [{"type": "plain", "text": ""}]},
+                    "steps": {"title": "", "content": [{"type": "plain", "text": "", "expectedAnswer": ""}]},
                     "worked": {"title": "", "content": [{"type": "plain", "text": ""}]},
                     "teachback": {"title": "", "content": [{"type": "plain", "text": ""}]},
                 },
@@ -294,35 +399,66 @@ class GCSEHelpGenerator:
 
         # Support both new (OpenAI()) and legacy SDKs.
         text: str
+        llm_start = time.perf_counter()
         if hasattr(openai, "OpenAI"):
             client = openai.OpenAI(api_key=api_key)  # type: ignore[attr-defined]
-            resp = client.chat.completions.create(
-                model=self._config.model,
-                messages=[
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": prompt},
-                ],
-                temperature=0.2,
-                max_tokens=1500,
-            )
-            text = (resp.choices[0].message.content or "").strip()
+            try:
+                resp = client.chat.completions.create(
+                    model=self._config.model,
+                    messages=[
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": prompt},
+                    ],
+                    # Ask the API to enforce JSON output.
+                    response_format={"type": "json_object"},
+                    temperature=0.2,
+                    # Avoid truncation that can produce incomplete JSON.
+                    max_tokens=2500,
+                )
+                text = (resp.choices[0].message.content or "").strip()
+            except Exception:
+                logger.exception(
+                    "gcse_help_generator.llm_call_failed sdk=new key=%s model=%s",
+                    key_short,
+                    self._config.model,
+                )
+                raise
         else:
             openai.api_key = api_key  # type: ignore[attr-defined]
-            resp = openai.ChatCompletion.create(  # type: ignore[attr-defined]
-                model=self._config.model,
-                messages=[
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": prompt},
-                ],
-                temperature=0.2,
-                max_tokens=1500,
-            )
-            text = (resp["choices"][0]["message"]["content"] or "").strip()
+            try:
+                resp = openai.ChatCompletion.create(  # type: ignore[attr-defined]
+                    model=self._config.model,
+                    messages=[
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": prompt},
+                    ],
+                    temperature=0.2,
+                    max_tokens=2500,
+                )
+                text = (resp["choices"][0]["message"]["content"] or "").strip()
+            except Exception:
+                logger.exception(
+                    "gcse_help_generator.llm_call_failed sdk=legacy key=%s model=%s",
+                    key_short,
+                    self._config.model,
+                )
+                raise
+
+        logger.info(
+            "gcse_help_generator.llm_call_ok key=%s model=%s chars=%s ms=%d",
+            key_short,
+            self._config.model,
+            len(text),
+            int((time.perf_counter() - llm_start) * 1000),
+        )
 
         try:
             obj: Dict[str, Any] = json.loads(text)
-        except json.JSONDecodeError:
-            # One repair attempt
+        except JSONDecodeError:
+            logger.warning("gcse_help_generator.json_parse_failed key=%s attempting_repair=true", key_short)
+            # One repair attempt (strict: must return JSON, but we defensively
+            # extract the first JSON object if wrapped in code fences/text).
+            repaired_text: str
             if hasattr(openai, "OpenAI"):
                 client = openai.OpenAI(api_key=api_key)  # type: ignore[attr-defined]
                 repair = client.chat.completions.create(
@@ -331,13 +467,14 @@ class GCSEHelpGenerator:
                         {"role": "system", "content": system},
                         {
                             "role": "user",
-                            "content": "Fix and return ONLY valid JSON for the following (no commentary):\n" + text,
+                            "content": "Fix and return ONLY valid JSON for the following (no commentary, no markdown):\n" + text,
                         },
                     ],
+                    response_format={"type": "json_object"},
                     temperature=0,
-                    max_tokens=1500,
+                    max_tokens=2500,
                 )
-                obj = json.loads((repair.choices[0].message.content or "").strip())
+                repaired_text = (repair.choices[0].message.content or "").strip()
             else:
                 repair = openai.ChatCompletion.create(  # type: ignore[attr-defined]
                     model=self._config.model,
@@ -345,15 +482,31 @@ class GCSEHelpGenerator:
                         {"role": "system", "content": system},
                         {
                             "role": "user",
-                            "content": "Fix and return ONLY valid JSON for the following (no commentary):\n" + text,
+                            "content": "Fix and return ONLY valid JSON for the following (no commentary, no markdown):\n" + text,
                         },
                     ],
                     temperature=0,
-                    max_tokens=1500,
+                    max_tokens=2500,
                 )
-                obj = json.loads((repair["choices"][0]["message"]["content"] or "").strip())
+                repaired_text = (repair["choices"][0]["message"]["content"] or "").strip()
 
-        self._light_validate_response(obj)
+            try:
+                obj = json.loads(repaired_text)
+            except JSONDecodeError:
+                extracted = self._extract_first_json_object(repaired_text)
+                obj = json.loads(extracted)
+
+        logger.info(
+            "gcse_help_generator.json_parse_ok key=%s ms=%d",
+            key_short,
+            int((time.perf_counter() - llm_start) * 1000),
+        )
+
+        try:
+            self._light_validate_response(obj)
+        except Exception:
+            logger.exception("gcse_help_generator.validation_failed key=%s", key_short)
+            raise
 
         if use_cache:
             if self._config.cache_backend == "dynamodb":
@@ -361,4 +514,20 @@ class GCSEHelpGenerator:
             elif self._config.cache_backend == "json":
                 self._cache[key] = obj
                 self._save_cache()
+        logger.info(
+            "gcse_help_generator.generate_ok key=%s total_ms=%d",
+            key_short,
+            int((time.perf_counter() - start) * 1000),
+        )
+        return obj
+
+def convert_floats_to_decimal(obj: Any) -> Any:
+    """Recursively convert all float values to Decimal for DynamoDB compatibility."""
+    if isinstance(obj, list):
+        return [convert_floats_to_decimal(item) for item in obj]
+    elif isinstance(obj, dict):
+        return {key: convert_floats_to_decimal(value) for key, value in obj.items()}
+    elif isinstance(obj, float):
+        return Decimal(str(obj))
+    else:
         return obj

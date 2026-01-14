@@ -46,6 +46,18 @@ export function MathProblem({ problem, onSolved, currentStepIndex, onStepChange 
     const expectedAnswer = currentStep.expectedAnswer.toLowerCase();
     const isCorrect = userAnswer === expectedAnswer;
     
+    console.log('🔍 Answer Check Debug:', {
+      stepNumber: currentStepIndex + 1,
+      userAnswer: `"${userAnswer}"`,
+      expectedAnswer: `"${expectedAnswer}"`,
+      userAnswerLength: userAnswer.length,
+      expectedAnswerLength: expectedAnswer.length,
+      isCorrect,
+      prompt: currentStep.prompt,
+      hint: currentStep.hint,
+      rawUserInput: stepAnswers[currentStepIndex],
+    });
+    
     const newFeedback = [...stepFeedback];
     newFeedback[currentStepIndex] = isCorrect ? 'correct' : 'incorrect';
     setStepFeedback(newFeedback);

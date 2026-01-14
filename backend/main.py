@@ -518,9 +518,25 @@ async def homework_submit(
 
 @app.post("/api/v1/homework/help-json", response_model=HomeworkHelpJsonRes)
 def homework_help_json(req: HomeworkHelpJsonReq):
-    # Validate uid exists (optional if anonymous allowed)
-    if not get_user_profile(req.uid):
-        raise HTTPException(status_code=404, detail="User not found")
+    # Ensure a profile exists for demo/local flows.
+    # The frontend can send `uid="demo"` (or other local UID) before bootstrapping.
+    try:
+        profile = get_user_profile(req.uid)
+    except Exception:
+        logger.exception("homework_help_json get_user_profile failed uid=%s", req.uid)
+        profile = None
+
+    if not profile:
+        # Auto-create for local demo/testing only.
+        # In production with auth, this should be handled by bootstrap/signup.
+        if req.uid == "demo" or os.getenv("ALLOW_ANONYMOUS_HELP", "").strip().lower() in {"1", "true", "yes"}:
+            try:
+                # db.put_user_profile signature: (uid, device_id)
+                put_user_profile(req.uid, device_id=None)
+            except Exception:
+                logger.exception("homework_help_json auto-create profile failed uid=%s", req.uid)
+        else:
+            raise HTTPException(status_code=404, detail="User not found")
 
     GCSEHelpGenerator, GCSEHelpError = _safe_import_gcse_help_generator()
     if GCSEHelpGenerator is None or GCSEHelpError is None:
@@ -541,9 +557,23 @@ def homework_help_json(req: HomeworkHelpJsonReq):
         )
         return HomeworkHelpJsonRes(result=result)
     except GCSEHelpError as e:
+        logger.info(
+            "homework_help_json bad_request uid=%s error=%s",
+            req.uid,
+            str(e),
+        )
         raise HTTPException(status_code=400, detail=str(e)) from e
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Help generation failed: {e}") from e
+        # Ensure stack traces make it into .dev-logs/backend.log
+        logger.exception(
+            "homework_help_json failed uid=%s yearGroup=%s tier=%s",
+            req.uid,
+            req.yearGroup,
+            req.tier,
+        )
+        raise HTTPException(status_code=500, detail="Help generation failed") from e
 
 
 @app.post("/api/v1/progress", response_model=schemas.ProgressItem)

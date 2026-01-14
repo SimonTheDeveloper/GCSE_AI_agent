@@ -4,6 +4,8 @@ import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
 import { Progress } from '../ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
+import { useState } from 'react';
 import { 
   Upload, 
   Image as ImageIcon, 
@@ -12,7 +14,8 @@ import {
   CheckCircle2,
   Loader2,
   X,
-  ArrowRight
+  ArrowRight,
+  ChevronDown
 } from 'lucide-react';
 
 export interface HomeworkSubmissionViewProps {
@@ -21,6 +24,9 @@ export interface HomeworkSubmissionViewProps {
   uploadedFiles: File[];
   pastedImage: string | null;
   activeTab: string;
+
+  // Error state
+  error?: string | null;
   
   // Processing state
   isProcessing: boolean;
@@ -59,6 +65,7 @@ export function HomeworkSubmissionView({
   processingProgress,
   isDragging,
   canSubmit,
+  error,
   onTextInputChange,
   onFileUpload,
   onPaste,
@@ -102,6 +109,14 @@ export function HomeworkSubmissionView({
           </Card>
         ) : (
           <>
+            {error ? (
+              <Card className="p-4 mb-6 border-red-200 bg-red-50">
+                <div className="text-sm text-red-800">
+                  <div className="font-semibold mb-1">Couldn0t process your problem</div>
+                  <div className="whitespace-pre-wrap break-words">{error}</div>
+                </div>
+              </Card>
+            ) : null}
             <Card className="p-6 mb-6">
               <div>
                 <label className="block mb-2">Enter your math problem</label>
@@ -263,6 +278,7 @@ export interface ProcessedResultViewProps {
   textInput: string;
   uploadedFiles: File[];
   pastedImage: string | null;
+  rawApiResponse?: any;
   onSubmitAnother: () => void;
   onViewProblem: () => void;
   problemPreview: React.ReactNode;
@@ -272,10 +288,13 @@ export function ProcessedResultView({
   textInput,
   uploadedFiles,
   pastedImage,
+  rawApiResponse,
   onSubmitAnother,
   onViewProblem,
   problemPreview
 }: ProcessedResultViewProps) {
+  const [isApiResponseOpen, setIsApiResponseOpen] = useState(false);
+  
   return (
     <div className="container mx-auto px-6 py-8">
       <Card className="p-6 mb-6">
@@ -341,6 +360,28 @@ export function ProcessedResultView({
           </div>
         </Card>
       </div>
+
+      {rawApiResponse && (
+        <Card className="p-6 mt-6">
+          <Collapsible open={isApiResponseOpen} onOpenChange={setIsApiResponseOpen}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="w-full justify-between p-4">
+                <span className="font-semibold">Raw API Response (Debug)</span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${
+                  isApiResponseOpen ? 'transform rotate-180' : ''
+                }`} />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="mt-4 p-4 bg-gray-900 text-gray-100 rounded-lg overflow-auto max-h-96">
+                <pre className="text-xs">
+                  {JSON.stringify(rawApiResponse, null, 2)}
+                </pre>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        </Card>
+      )}
     </div>
   );
 }
