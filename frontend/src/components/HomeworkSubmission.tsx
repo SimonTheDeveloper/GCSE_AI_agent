@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { HomeworkSubmissionView, ProcessedResultView } from './views/HomeworkSubmissionView';
 import { MathProblem } from './MathProblem';
 import { postHomeworkHelpJson } from '../lib/api';
@@ -43,6 +43,7 @@ export function HomeworkSubmission({ onViewProblem }: HomeworkSubmissionProps) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [lastError, setLastError] = useState<string | null>(null);
   const [rawApiResponse, setRawApiResponse] = useState<any>(null);
+  const [showExplanation, setShowExplanation] = useState(false);
 
   const processHomework = async () => {
     if (!textInput.trim()) {
@@ -100,7 +101,7 @@ export function HomeworkSubmission({ onViewProblem }: HomeworkSubmissionProps) {
         steps: (stepsWithAnswers.length 
           ? stepsWithAnswers 
           : [{ text: 'Read the question carefully and write down what you know.', expectedAnswer: '' }]
-        ).map((step, idx: number) => ({
+        ).map((step: any, idx: number) => ({
           stepNumber: idx + 1,
           prompt: step.text,
           expectedAnswer: step.expectedAnswer,
@@ -215,6 +216,10 @@ export function HomeworkSubmission({ onViewProblem }: HomeworkSubmissionProps) {
         rawApiResponse={rawApiResponse}
         onSubmitAnother={handleSubmitAnother}
         onViewProblem={onViewProblem}
+        showExplanation={showExplanation}
+        onToggleExplanation={() => setShowExplanation(!showExplanation)}
+        explanation={processedProblem.explanation}
+        currentStepIndex={currentStepIndex}
         problemPreview={
           <MathProblem
             problem={processedProblem}

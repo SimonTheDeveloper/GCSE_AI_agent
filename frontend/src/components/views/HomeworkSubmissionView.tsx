@@ -5,6 +5,8 @@ import { Badge } from '../ui/badge';
 import { Progress } from '../ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
+import { ExplanationPanel } from '../ExplanationPanel';
 import { useState } from 'react';
 import { 
   Upload, 
@@ -15,7 +17,9 @@ import {
   Loader2,
   X,
   ArrowRight,
-  ChevronDown
+  ChevronDown,
+  BookOpen,
+  XCircle
 } from 'lucide-react';
 
 export interface HomeworkSubmissionViewProps {
@@ -50,7 +54,7 @@ export interface HomeworkSubmissionViewProps {
   onFileInputClick: () => void;
   
   // Refs
-  fileInputRef: React.RefObject<HTMLInputElement>;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
   
   // Processed result (if shown from parent)
   children?: React.ReactNode;
@@ -198,7 +202,7 @@ export function HomeworkSubmissionView({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={(e) => {
+                          onClick={(e: React.MouseEvent) => {
                             e.stopPropagation();
                             onRemoveFile(index);
                           }}
@@ -282,6 +286,17 @@ export interface ProcessedResultViewProps {
   onSubmitAnother: () => void;
   onViewProblem: () => void;
   problemPreview: React.ReactNode;
+  showExplanation: boolean;
+  onToggleExplanation: () => void;
+  explanation: {
+    overview: string;
+    stepByStep: Array<{
+      title: string;
+      content: string;
+    }>;
+    keyTakeaways: string[];
+  };
+  currentStepIndex: number;
 }
 
 export function ProcessedResultView({
@@ -291,7 +306,11 @@ export function ProcessedResultView({
   rawApiResponse,
   onSubmitAnother,
   onViewProblem,
-  problemPreview
+  problemPreview,
+  showExplanation,
+  onToggleExplanation,
+  explanation,
+  currentStepIndex
 }: ProcessedResultViewProps) {
   const [isApiResponseOpen, setIsApiResponseOpen] = useState(false);
   
@@ -314,17 +333,69 @@ export function ProcessedResultView({
         </div>
       </Card>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        <Card className="p-6">
-          <h3 className="mb-4">Original Submission</h3>
+      <ResizablePanelGroup direction="horizontal" className="min-h-[calc(100vh-300px)] rounded-lg border bg-white">
+        <ResizablePanel defaultSize={showExplanation ? 70 : 100} minSize={50}>
+          <div className="h-full p-6 overflow-auto">
+            <div className="mb-4 flex justify-between items-center">
+              <h3>Your Interactive Problem</h3>
+              <Button
+                variant={showExplanation ? "destructive" : "default"}
+                onClick={onToggleExplanation}
+                className="gap-2"
+              >
+                {showExplanation ? (
+                  <>
+                    <XCircle className="h-4 w-4" />
+                    Hide Explanation
+                  </>
+                ) : (
+                  <>
+                    <BookOpen className="h-4 w-4" />
+                    Show Explanation
+                  </>
+                )}
+              </Button>
+            </div>
+            {problemPreview}
+          </div>
+        </ResizablePanel>
+
+        {showExplanation && (
+          <>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={30} minSize={25} maxSize={45}>
+              <div className="h-full overflow-hidden">
+                <ExplanationPanel
+                  explanation={{
+                    concept: explanation.overview,
+                    steps: explanation.stepByStep.map((step, idx) => ({
+                      step: idx + 1,
+                      title: step.title,
+                      content: step.content
+                    })),
+                    hint: explanation.keyTakeaways.length > 0 
+                      ? explanation.keyTakeaways.join(' • ') 
+                      : 'Keep practicing to master this concept!'
+                  }}
+                  currentStepIndex={currentStepIndex}
+                />
+              </div>
+            </ResizablePanel>
+          </>
+        )}
+      </ResizablePanelGroup>
+
+      <Card className="p-6 mt-6">
+        <h3 className="mb-4">Original Submission</h3>
+        <div className="grid md:grid-cols-2 gap-4">
           {textInput && (
-            <div className="mb-4">
+            <div>
               <Badge className="mb-2">Text Input</Badge>
               <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded">{textInput}</p>
             </div>
           )}
           {uploadedFiles.length > 0 && (
-            <div className="mb-4">
+            <div>
               <Badge className="mb-2">Uploaded Files</Badge>
               <div className="space-y-2">
                 {uploadedFiles.map((file, idx) => (
@@ -342,24 +413,8 @@ export function ProcessedResultView({
               <img src={pastedImage} alt="Pasted" className="rounded border max-h-64 w-auto" />
             </div>
           )}
-        </Card>
-
-        <Card className="p-6" id="interactive-preview">
-          <div className="mb-4 flex items-center justify-between">
-            <h3>Interactive Problem</h3>
-            <Button onClick={onViewProblem} className="gap-2">
-              Open in Practice Mode
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="bg-gray-50 p-4 rounded-lg border">
-            <p className="text-sm text-gray-600 mb-3">
-              Preview of your interactive problem. Click "Open in Practice Mode" to work through it with full features.
-            </p>
-            {problemPreview}
-          </div>
-        </Card>
-      </div>
+        </div>
+      </Card>
 
       {rawApiResponse && (
         <Card className="p-6 mt-6">
