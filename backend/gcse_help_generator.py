@@ -14,6 +14,11 @@ from typing import Any, Dict, Optional
 from json import JSONDecodeError
 
 import time
+import boto3  # type: ignore
+
+from gcse_help_template import create_gcse_help_base_structure
+from gcse_help_prompts import get_system_prompt, get_user_prompt
+
 
 
 logger = logging.getLogger(__name__)
@@ -105,8 +110,7 @@ class GCSEHelpGenerator:
 
     def _safe_get_dynamodb_table(self):
         try:
-            import boto3  # type: ignore
-
+          
             dynamodb = boto3.resource(
                 "dynamodb",
                 region_name=self._config.dynamodb_region,
@@ -333,69 +337,20 @@ class GCSEHelpGenerator:
         if openai is None:
             raise GCSEHelpError("OpenAI SDK not installed in backend environment")
 
-        request_id = f"req_{hashlib.sha1((normalized_text + _now_iso()).encode()).hexdigest()[:12]}"
-        exercise_id = f"ex_{hashlib.sha1(normalized_text.encode()).hexdigest()[:12]}"
-
-        base_obj: Dict[str, Any] = {
-            "schema_version": self._config.schema_version,
-            "request": {
-                "id": request_id,
-                "created_at": _now_iso(),
-                "locale": "en-GB",
-                "student_context": {
-                    "uid": uid,
-                    "year_group": year_group,
-                    "tier": tier,
-                    "desired_help_level": desired_help_level,
-                    "what_ive_tried": "",
-                },
-                "input": {"modality": "typed_text", "typed_text": {"text": normalized_text}},
-            },
-            "exercise": {
-                "exercise_id": exercise_id,
-                "origin": {"type": origin_type, "label": origin_label, "created_at": _now_iso()},
-                "prompt": {
-                    "normalized_text": normalized_text,
-                    "raw_text": raw_text,
-                    "attachments": [],
-                },
-                "extraction": {"status": "ok", "confidence": 1, "ambiguities": []},
-            },
-            "analysis": {
-                "subject": "maths",
-                "topics": [],
-                "difficulty": {"gcse_tier_hint": "unknown", "confidence": 0.5},
-                "prerequisites": [],
-                "common_mistakes": [],
-            },
-            "help": {
-                "recommended_start": "nudge",
-                "tiers": {
-                    "nudge": {"title": "", "content": [{"type": "plain", "text": ""}]},
-                    "hint": {"title": "", "content": [{"type": "plain", "text": ""}]},
-                    "steps": {"title": "", "content": [{"type": "plain", "text": "", "expectedAnswer": ""}]},
-                    "worked": {"title": "", "content": [{"type": "plain", "text": ""}]},
-                    "teachback": {"title": "", "content": [{"type": "plain", "text": ""}]},
-                },
-                "formulas_used": [],
-                "check_your_answer": {"instruction": "", "worked_check": ""},
-                "practice": [],
-            },
-        }
-
-        system = (
-            "You are a GCSE tutor assistant. Return ONLY valid JSON that conforms to the requested structure. "
-            "Use UK tone (en-GB) and age-appropriate wording for Year 9 unless otherwise specified. "
-            "Do not include markdown fences. Do not include commentary."
+        base_structure = create_gcse_help_base_structure(
+            normalized_text=normalized_text,
+            raw_text=raw_text,
+            schema_version=self._config.schema_version,
+            uid=uid,
+            year_group=year_group,
+            tier=tier,
+            desired_help_level=desired_help_level,
+            origin_type=origin_type,
+            origin_label=origin_label,
         )
-        prompt = (
-            "Fill in and complete the JSON object below. Keep the same keys. Replace placeholder empty strings/arrays with real content. "
-            "Populate analysis.topics, analysis.prerequisites, analysis.common_mistakes appropriately. "
-            "Populate help.tiers with progressive help: nudge (1-2 lines), hint (bullets), steps (numbered bullets), worked (math lines), teachback (why it works). "
-            "Use help.formulas_used only if relevant. Include a check_your_answer with substitution check. Add 2-3 practice questions with final answers only. "
-            "Return strictly valid JSON.\n\n"
-            + json.dumps(base_obj, ensure_ascii=False)
-        )
+
+        system = get_system_prompt()
+        prompt = get_user_prompt(base_structure)
 
         # Support both new (OpenAI()) and legacy SDKs.
         text: str

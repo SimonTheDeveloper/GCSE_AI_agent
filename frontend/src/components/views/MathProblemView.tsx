@@ -122,7 +122,6 @@ export function MathProblemView({
               </div>
 
               <div className="space-y-3 ml-11">
-                <label htmlFor="step-answer" className="block">Your Answer:</label>
                 <div className="flex gap-3">
                   <Input
                     id="step-answer"
