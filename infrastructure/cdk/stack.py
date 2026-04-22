@@ -8,6 +8,8 @@ from aws_cdk import (
     aws_lambda as lambda_,
     aws_logs as logs,
     aws_cognito as cognito,
+    aws_cloudfront as cloudfront,
+    aws_cloudfront_origins as origins,
     CfnOutput,
     aws_s3 as s3,
     aws_s3_deployment as s3deploy,
@@ -103,36 +105,52 @@ class GcseAiStack(Stack):
             unhealthy_threshold_count=3,
         )
 
-        # S3 bucket for React frontend hosting
-        # If user did not explicitly set FRONTEND_BUCKET_NAME, let CDK generate a unique name
+        # S3 bucket for React frontend — private, served via CloudFront
+        bucket_kwargs = dict(
+            removal_policy=RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
+        )
         if os.environ.get("FRONTEND_BUCKET_NAME"):
-            frontend_bucket = s3.Bucket(
-                self, "FrontendBucket",
-                bucket_name=bucket_name,
-                website_index_document="index.html",
-                website_error_document="index.html",
-                public_read_access=True,
-                block_public_access=s3.BlockPublicAccess.BLOCK_ACLS,
-                removal_policy=RemovalPolicy.DESTROY,
-                auto_delete_objects=True,   # ensure deletable during rollback/destroy
-            )
-        else:
-            frontend_bucket = s3.Bucket(
-                self, "FrontendBucket",
-                website_index_document="index.html",
-                website_error_document="index.html",
-                public_read_access=True,
-                block_public_access=s3.BlockPublicAccess.BLOCK_ACLS,
-                removal_policy=RemovalPolicy.DESTROY,
-                auto_delete_objects=True,
-            )
+            bucket_kwargs["bucket_name"] = bucket_name
 
-        # (Optional) Deploy local build folder to S3 on cdk deploy
+        frontend_bucket = s3.Bucket(self, "FrontendBucket", **bucket_kwargs)
+
+        # CloudFront distribution with OAI so S3 stays private
+        oai = cloudfront.OriginAccessIdentity(self, "FrontendOAI")
+        frontend_bucket.grant_read(oai)
+
+        distribution = cloudfront.Distribution(
+            self, "FrontendDistribution",
+            default_behavior=cloudfront.BehaviorOptions(
+                origin=origins.S3Origin(frontend_bucket, origin_access_identity=oai),
+                viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                cache_policy=cloudfront.CachePolicy.CACHING_OPTIMIZED,
+            ),
+            default_root_object="index.html",
+            error_responses=[
+                cloudfront.ErrorResponse(
+                    http_status=403,
+                    response_http_status=200,
+                    response_page_path="/index.html",
+                ),
+                cloudfront.ErrorResponse(
+                    http_status=404,
+                    response_http_status=200,
+                    response_page_path="/index.html",
+                ),
+            ],
+        )
+
+        # Deploy React build to S3 and invalidate CloudFront cache
         s3deploy.BucketDeployment(
             self, "DeployReactApp",
             sources=[s3deploy.Source.asset(os.path.join(_REPO_ROOT, "frontend", "build"))],
             destination_bucket=frontend_bucket,
+            distribution=distribution,
+            distribution_paths=["/*"],
         )
+
+        cloudfront_url = f"https://{distribution.distribution_domain_name}"
 
         # Output Load Balancer DNS
         CfnOutput(self, "LoadBalancerURL",
@@ -140,7 +158,7 @@ class GcseAiStack(Stack):
                   description="Public URL for the FastAPI app",
                   export_name="FastApiLoadBalancerUrl")
 
-        CfnOutput(self, "FrontendBucketURL", value=frontend_bucket.bucket_website_url)
+        CfnOutput(self, "FrontendURL", value=cloudfront_url)
         CfnOutput(self, "DynamoTableName", value=table.table_name)
         CfnOutput(self, "DynamoGSI1", value="GSI1")
 
@@ -167,9 +185,11 @@ class GcseAiStack(Stack):
 
         callback_urls = [
             "http://localhost:3000",
+            cloudfront_url,
         ]
         logout_urls = [
             "http://localhost:3000",
+            cloudfront_url,
         ]
         # Allow env overrides
         if os.environ.get("COGNITO_CALLBACK_URLS"):
@@ -217,8 +237,7 @@ class GcseAiStack(Stack):
         container.add_environment("COGNITO_USER_POOL_ID", user_pool.user_pool_id)
         container.add_environment("COGNITO_APP_CLIENT_ID", user_pool_client.user_pool_client_id)
         container.add_environment("COGNITO_ISSUER", issuer_url)
-        # Allow the S3 frontend origin in backend CORS
-        container.add_environment("FRONTEND_URL", frontend_bucket.bucket_website_url)
+        container.add_environment("FRONTEND_URL", cloudfront_url)
 
         CfnOutput(self, "CognitoUserPoolId", value=user_pool.user_pool_id)
         CfnOutput(self, "CognitoUserPoolClientId", value=user_pool_client.user_pool_client_id)
