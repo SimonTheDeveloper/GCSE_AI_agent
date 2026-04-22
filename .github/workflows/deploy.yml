@@ -59,11 +59,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-npm-
 
-      - run: |
-          pip install poetry
-          poetry config virtualenvs.create false
-          cd infrastructure/cdk && pip install -r requirements.txt && cd ../..
-          npm install -g aws-cdk
+      - name: Install CDK Python dependencies
+        run: cd infrastructure/cdk && pip install -r requirements.txt
+
+      - name: Install AWS CDK CLI
+        run: npm install -g aws-cdk
 
       - name: Install frontend dependencies
         run: |
@@ -82,14 +82,14 @@ jobs:
 
       - name: Check for CDK changes
         run: |
-          cdk diff --app "poetry run python3 infrastructure/cdk/app.py" || echo "No changes detected"
+          cdk diff --app "python3 infrastructure/cdk/app.py" || echo "No changes detected"
 
       - name: Check CDK stack state
-        run: cdk diff --app "poetry run python3 infrastructure/cdk/app.py"
+        run: cdk diff --app "python3 infrastructure/cdk/app.py"
 
       - name: Deploy CDK
         run: |
-          cdk deploy --require-approval never --app "poetry run python3 infrastructure/cdk/app.py"
+          cdk deploy --require-approval never --app "python3 infrastructure/cdk/app.py"
 
   destroy:
     if: github.event_name == 'workflow_dispatch'  # Only run if manually triggered
@@ -135,14 +135,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-npm-
 
-      - name: Install Poetry and Dependencies
-        run: |
-          pip install poetry
-          poetry config virtualenvs.create false
-          poetry install --only main
+      - name: Install CDK Python dependencies
+        run: cd infrastructure/cdk && pip install -r requirements.txt
 
       - name: Install AWS CDK
         run: npm install -g aws-cdk
 
       - name: Destroy CDK stack
-        run: cdk destroy --force --app "poetry run python3 infrastructure/cdk/app.py"
+        run: cdk destroy --force --app "python3 infrastructure/cdk/app.py"
