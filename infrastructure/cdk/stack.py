@@ -17,6 +17,10 @@ from aws_cdk import (
 from constructs import Construct
 import os
 
+# Absolute path to the repo root, regardless of where CDK is invoked from
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_REPO_ROOT = os.path.join(_HERE, "..", "..")
+
 class GcseAiStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
@@ -66,7 +70,7 @@ class GcseAiStack(Stack):
         container = task_definition.add_container(
             "AppContainer",
             # Build Docker image from the backend directory (two levels up from cdk/)
-            image=ecs.ContainerImage.from_asset("../../backend"),
+            image=ecs.ContainerImage.from_asset(os.path.join(_REPO_ROOT, "backend")),
             logging=ecs.LogDriver.aws_logs(
                 stream_prefix="AppLogs",
                 log_retention=logs.RetentionDays.ONE_WEEK
@@ -126,7 +130,7 @@ class GcseAiStack(Stack):
         # (Optional) Deploy local build folder to S3 on cdk deploy
         s3deploy.BucketDeployment(
             self, "DeployReactApp",
-            sources=[s3deploy.Source.asset("../../frontend/build")],
+            sources=[s3deploy.Source.asset(os.path.join(_REPO_ROOT, "frontend", "build"))],
             destination_bucket=frontend_bucket,
         )
 
@@ -200,7 +204,7 @@ class GcseAiStack(Stack):
             self, "PreSignupFn",
             runtime=lambda_.Runtime.PYTHON_3_12,
             handler="pre_signup.handler",
-            code=lambda_.Code.from_asset("../../infrastructure"),
+            code=lambda_.Code.from_asset(os.path.join(_REPO_ROOT, "infrastructure")),
             environment={
                 "ALLOWED_EMAILS": os.environ.get("ALLOWED_EMAILS", ""),
                 "ALLOWED_DOMAINS": os.environ.get("ALLOWED_DOMAINS", ""),
