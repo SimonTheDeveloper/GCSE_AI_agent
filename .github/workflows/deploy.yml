@@ -21,8 +21,7 @@ jobs:
 
     env:
       AWS_REGION: eu-west-2
-      DYNAMODB_TABLE_NAME: student-progress
-      FRONTEND_BUCKET_NAME: frontend-bucket
+      DYNAMODB_TABLE_NAME: gcse_app
       COGNITO_CALLBACK_URLS: ${{ vars.COGNITO_CALLBACK_URLS }}
       COGNITO_LOGOUT_URLS: ${{ vars.COGNITO_LOGOUT_URLS }}
       ALLOWED_EMAILS: ${{ vars.ALLOWED_EMAILS }}
@@ -101,8 +100,7 @@ jobs:
 
     env:
       AWS_REGION: eu-west-2
-      DYNAMODB_TABLE_NAME: student-progress
-      FRONTEND_BUCKET_NAME: frontend-bucket
+      DYNAMODB_TABLE_NAME: gcse_app
 
     steps:
       - name: Checkout code
