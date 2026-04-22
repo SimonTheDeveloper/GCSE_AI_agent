@@ -1,111 +1,107 @@
-# Airline Test
+# GCSE AI Tutor
 
-## Description
-Coding test set by ajaali consulting.
+An AI-assisted GCSE tutoring application, initially focused on GCSE Maths.
 
-## Requirements
-- Python 3.9+
-- Poetry (version 1.1.0 or later)
-- Node.js (version 16.x or later)
-- AWS CDK CLI (version 2.166.0)
-- AWS CLI (configured with appropriate credentials)
-
-## Setup
-
-1. **Install Poetry**  
-   Open a terminal and run:
-   ```sh
-   curl -sSL https://install.python-poetry.org | python3 -
-   ```
-
-2. **Install Python dependencies using Poetry**  
-   ```sh
-   poetry install
-   ```
-
-3. **Create a `.env` file**  
-   In the root of your project directory, add your AWS credentials and other necessary environment variables:
-   ```env
-   AWS_ACCESS_KEY_ID=your_access_key_id
-   AWS_SECRET_ACCESS_KEY=your_secret_access_key
-   AWS_DEFAULT_REGION=your_default_region
-   ```
-
-   > **Tip:** For CI/CD, use GitHub Secrets instead of storing credentials in `.env`.
-
-4. **Install Node.js and AWS CDK CLI**  
-   Ensure you have Node.js 16.x or later and AWS CDK CLI installed:
-   ```sh
-   npm install -g aws-cdk@2.166.0
-   ```
-
-5. **Install frontend dependencies and build the React app**  
-   ```sh
-   cd frontend
-   npm install
-   npm run build
-   cd ..
-   ```
-
-6. **Configure AWS CLI**  
-   ```sh
-   aws configure
-   ```
-
-7. **Bootstrap the AWS environment**  
-   ```sh
-   cdk bootstrap aws://ACCOUNT-NUMBER/REGION
-   ```
-   Replace `ACCOUNT-NUMBER` and `REGION` with your AWS account and region.
-
-8. **Deploy using CDK**  
-   ```sh
-   cdk deploy
-   ```
-
-9. **Generate stub data**  
-   ```sh
-   poetry run python backend/load_flight_data.py
-   ```
-
-10. **Run the FastAPI server locally**  
-    ```sh
-    poetry run uvicorn backend.app.main:app --reload
-    ```
+Students submit questions by image or text. The backend extracts, normalises, and solves the question, building a reusable **Exercise object** that powers hints, step-by-step explanations, answer checking, and progress tracking.
 
 ---
 
-## Frontend
+## Stack
 
-- The React app is deployed to S3 via CDK.  
-- After deployment, access your app using the S3 static website URL output by CDK.
+| Layer | Technology |
+|---|---|
+| Frontend | React + TypeScript (Vite) |
+| Backend | FastAPI (Python) |
+| Database | DynamoDB (single-table design) |
+| File storage | S3 |
+| Hosting | AWS Fargate |
+| Auth | Amazon Cognito |
+| AI | OpenAI (configurable model) |
+| OCR | Tesseract (optional) |
+| Infrastructure | AWS CDK |
 
 ---
 
-## GitHub Actions AWS Credentials
+## Local Development
 
-This template uses the [aws-actions/configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials) action in the workflow:
+### Backend
 
-```yaml
-- name: Configure AWS credentials
-  uses: aws-actions/configure-aws-credentials@v2
-  with:
-    role-to-assume: arn:aws:iam::<YOUR_ACCOUNT_ID>:role/GitHubActionsECRPushRole
-    aws-region: <YOUR_REGION>
-    role-session-name: github-actions-session
+```sh
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt   # or: pip install fastapi uvicorn python-dotenv boto3 openai pillow pytesseract
 ```
 
-Replace the `role-to-assume` and `aws-region` values with your own.
+Create `backend/.env`:
+```env
+DYNAMODB_TABLE_NAME=gcse_app
+AWS_REGION=eu-west-2
+OPENAI_API_KEY=sk-...           # optional – enables AI help
+OPENAI_MODEL=gpt-4o-mini        # optional – defaults to gpt-3.5-turbo
+```
+
+Run:
+```sh
+cd backend
+uvicorn main:app --reload --port 8000
+```
+
+### Frontend
+
+```sh
+cd frontend
+npm install
+npm run dev
+```
+
+The React app runs on `http://localhost:5173` by default, proxying API calls to `http://localhost:8000`.
+
+### OCR (optional)
+
+Install Tesseract to enable image text extraction:
+```sh
+brew install tesseract          # macOS
+# apt install tesseract-ocr     # Debian/Ubuntu
+```
+
+Then install the Python bindings:
+```sh
+pip install pytesseract Pillow
+```
 
 ---
 
-## GitHub Actions IAM Role
+## AWS Deployment
 
-This template expects you to have an IAM role in AWS named `GitHubActionsECRPushRole` that GitHub Actions can assume for deploying infrastructure and pushing to ECR (if needed).
+### Prerequisites
 
-### Example Trust Relationship for GitHub Actions OIDC
+- Python 3.9+
+- Node.js 18+
+- AWS CDK CLI: `npm install -g aws-cdk`
+- AWS CLI configured: `aws configure`
 
-When creating the `GitHubActionsECRPushRole` IAM role, set the following trust relationship to allow GitHub Actions from your repository to assume the role via OIDC:
+### Deploy
+
+```sh
+# Bootstrap CDK (first time only)
+cdk bootstrap aws://ACCOUNT-NUMBER/REGION
+
+# Build frontend
+cd frontend && npm install && npm run build && cd ..
+
+# Deploy all stacks
+cdk deploy
+```
+
+---
+
+## GitHub Actions
+
+The CI workflow uses OIDC to assume an IAM role for deployments.
+Replace the placeholders in `.github/workflows/` with your AWS account ID and region.
+
+### Required IAM role trust relationship
 
 ```json
 {
@@ -114,7 +110,7 @@ When creating the `GitHubActionsECRPushRole` IAM role, set the following trust r
     {
       "Effect": "Allow",
       "Principal": {
-        "Federated": "arn:aws:iam::<YOUR_ACCOUNT_ID>:oidc-provider/token.actions.githubusercontent.com"
+        "Federated": "arn:aws:iam::<ACCOUNT_ID>:oidc-provider/token.actions.githubusercontent.com"
       },
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
@@ -128,49 +124,13 @@ When creating the `GitHubActionsECRPushRole` IAM role, set the following trust r
 }
 ```
 
-- Replace `<YOUR_ACCOUNT_ID>` with your AWS account number.
-- Update the `repo:...` value if you fork or rename the repository, or want to allow other branches.
-
-> For more details, see [Configuring OpenID Connect in AWS](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect).
-
-### Required IAM Policies
-
-Attach the following policies to your `GitHubActionsECRPushRole`:
-
-#### 1. **AmazonEC2ContainerRegistryPowerUser** (AWS managed)
-
-Allows GitHub Actions to push and pull images to Amazon ECR.
-
-#### 2. **CDKDeployWideAccess** (Custom Inline Policy)
-
-Example policy:
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "cloudformation:*",
-        "s3:*",
-        "ec2:*",
-        "ecr:*",
-        "ecs:*",
-        "logs:*",
-        "iam:PassRole",
-        "dynamodb:*",
-        "ssm:GetParameter"
-      ],
-      "Resource": "*"
-    }
-  ]
-}
-```
-
-> **Note:**  
-> The above permissions allow full access to the main AWS services used by this template. You may further restrict them for production use.
+Attach `AmazonEC2ContainerRegistryPowerUser` and a custom CDK deploy policy (see [AWS docs](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html)).
 
 ---
 
-With these permissions and the trust relationship, your GitHub Actions workflow will be able to deploy infrastructure and push images as needed.
+## Key docs
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — system design and data flow
+- [docs/EXERCISE_OBJECT_SPEC.md](docs/EXERCISE_OBJECT_SPEC.md) — core data model
+- [docs/repository_map.md](docs/repository_map.md) — where code should live
+- [docs/AGENT_CONTEXT.md](docs/AGENT_CONTEXT.md) — guide for AI coding agents

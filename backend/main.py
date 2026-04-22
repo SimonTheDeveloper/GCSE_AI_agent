@@ -41,11 +41,14 @@ GSI1_NAME = os.getenv("DYNAMODB_GSI1", "GSI1")
 
 app = FastAPI()
 
-# Allowed frontend origins (add others if needed)
+# Allowed frontend origins
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
 ]
+_frontend_url = os.getenv("FRONTEND_URL", "").strip().rstrip("/")
+if _frontend_url:
+    ALLOWED_ORIGINS.append(_frontend_url)
 
 # Optional access controls (set via environment to enable)
 _ALLOWED_EMAILS = {x.strip().lower() for x in os.getenv("ALLOWED_EMAILS", "").split(",") if x.strip()}

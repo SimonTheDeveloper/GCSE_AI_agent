@@ -16,7 +16,7 @@ export interface LoginViewProps {
   onPasswordChange: (value: string) => void;
   onRememberMeChange: (checked: boolean) => void;
   onSubmit: (e: React.FormEvent) => void;
-  onDemoLogin: () => void;
+  onDemoLogin?: () => void;
   onSignUpClick?: () => void;
   onForgotPasswordClick?: () => void;
 }
@@ -134,26 +134,28 @@ export function LoginView({
             </form>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <div className="relative w-full">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
+            {onDemoLogin && (
+              <div className="relative w-full">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300"></div>
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-white px-4 text-gray-500">or</span>
+                </div>
               </div>
-              <div className="relative flex justify-center">
-                <span className="bg-white px-4 text-gray-500">
-                  or
-                </span>
-              </div>
-            </div>
+            )}
 
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={onDemoLogin}
-              disabled={isLoading}
-            >
-              Try Demo Account
-            </Button>
+            {onDemoLogin && (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={onDemoLogin}
+                disabled={isLoading}
+              >
+                Try Demo Account
+              </Button>
+            )}
 
             <div className="text-center text-gray-600">
               Don't have an account?{' '}

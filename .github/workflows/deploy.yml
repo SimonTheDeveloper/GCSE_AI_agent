@@ -4,8 +4,10 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'infrastructure/cdk/**'  # Only trigger deploy if CDK files are changed
-      - '.github/workflows/deploy.yml'  # Trigger if the workflow file is changed
+      - 'infrastructure/cdk/**'
+      - 'frontend/**'
+      - 'backend/**'
+      - '.github/workflows/deploy.yml'
   workflow_dispatch:  # Allows manual triggering of the workflow
 
 jobs:
@@ -21,7 +23,9 @@ jobs:
       AWS_REGION: eu-west-2
       DYNAMODB_TABLE_NAME: student-progress
       FRONTEND_BUCKET_NAME: frontend-bucket
-      REACT_APP_API_URL: ${{ vars.REACT_APP_API_URL }}
+      COGNITO_CALLBACK_URLS: ${{ vars.COGNITO_CALLBACK_URLS }}
+      COGNITO_LOGOUT_URLS: ${{ vars.COGNITO_LOGOUT_URLS }}
+      ALLOWED_EMAILS: ${{ vars.ALLOWED_EMAILS }}
 
     steps:
       - name: Checkout code
@@ -67,6 +71,11 @@ jobs:
           npm install
 
       - name: Build React frontend
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          VITE_COGNITO_USER_POOL_ID: ${{ vars.VITE_COGNITO_USER_POOL_ID }}
+          VITE_COGNITO_CLIENT_ID: ${{ vars.VITE_COGNITO_CLIENT_ID }}
+          VITE_COGNITO_REGION: eu-west-2
         run: |
           cd frontend
           npm run build

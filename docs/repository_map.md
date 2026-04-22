@@ -21,6 +21,10 @@ Before implementing a change:
 
 ---
 
+# Current vs Target Structure
+
+> **Note:** The backend is currently implemented as a **flat module** (`backend/main.py`, `backend/schemas.py`, `backend/database.py`, etc.) rather than the layered `backend/app/` structure shown below. The structure below is the **target architecture**. When adding new code, prefer extending the flat structure rather than creating the full layered hierarchy at once.
+
 # Recommended Top-Level Structure
 
 This is the intended mental model for the repository. The exact folder names may differ slightly in the real codebase.

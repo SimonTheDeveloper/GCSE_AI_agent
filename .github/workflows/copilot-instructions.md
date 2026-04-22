@@ -1,4 +1,4 @@
-iuissue# Copilot Instructions
+# Copilot Instructions
 
 This file guides GitHub Copilot when generating code for this
 repository.

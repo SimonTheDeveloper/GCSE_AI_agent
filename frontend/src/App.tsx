@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import { getStoredSession, signOut } from './lib/cognito';
 import { mathProblems } from './test_data/mathProblems';
 import { MathProblem } from './components/MathProblem';
 import { ExplanationPanel } from './components/ExplanationPanel';
@@ -8,7 +9,6 @@ import { Homepage } from './components/Homepage';
 import { HomeworkSubmission } from './components/HomeworkSubmission';
 import { Navigation } from './components/Navigation';
 import { Login } from './components/Login';
-import { SignUp } from './components/SignUp';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './components/ui/resizable';
 import { Button } from './components/ui/button';
 import { Toaster } from './components/ui/sonner';
@@ -17,13 +17,9 @@ import { toast } from 'sonner';
 
  
 
-type AuthView = 'login' | 'signup';
-
 export default function App() {
   const navigate = useNavigate();
-  const location = useLocation();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [authView, setAuthView] = useState<AuthView>('login');
   const [currentProblemId, setCurrentProblemId] = useState(1);
   const [showExplanation, setShowExplanation] = useState(false);
   const [solvedProblems, setSolvedProblems] = useState<number[]>([]);
@@ -32,10 +28,14 @@ export default function App() {
   const [difficultyFilter, setDifficultyFilter] = useState<string>('All');
   const [categoryFilter, setCategoryFilter] = useState<string>('All');
 
-  // Check for existing login state on mount
+  // Restore session from Cognito SDK on mount
   useEffect(() => {
-    const loggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    setIsLoggedIn(loggedIn);
+    getStoredSession().then((session) => {
+      if (session) {
+        localStorage.setItem('userEmail', session.email);
+        setIsLoggedIn(true);
+      }
+    });
   }, []);
 
   const currentProblem = mathProblems.find(p => p.id === currentProblemId)!;
@@ -76,13 +76,11 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
+    signOut();
     localStorage.removeItem('userEmail');
     localStorage.removeItem('userName');
     localStorage.removeItem('userGradeLevel');
-    localStorage.removeItem('rememberMe');
     setIsLoggedIn(false);
-    setAuthView('login');
     navigate('/');
     toast.success('Logged out successfully');
   };
@@ -134,21 +132,11 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [currentProblemId, filteredProblems]);
 
-  // Show login or signup page if not authenticated
+  // Show login page if not authenticated
   if (!isLoggedIn) {
     return (
       <>
-        {authView === 'login' ? (
-          <Login 
-            onLoginSuccess={handleLogin}
-            onSignUpClick={() => setAuthView('signup')}
-          />
-        ) : (
-          <SignUp
-            onSignUpSuccess={handleSignUp}
-            onLoginClick={() => setAuthView('login')}
-          />
-        )}
+        <Login onLoginSuccess={handleLogin} />
         <Toaster position="bottom-right" />
       </>
     );

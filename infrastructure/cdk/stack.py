@@ -5,6 +5,7 @@ from aws_cdk import (
     aws_ecs_patterns as ecs_patterns,
     aws_dynamodb as dynamodb,
     aws_iam as iam,
+    aws_lambda as lambda_,
     aws_logs as logs,
     aws_cognito as cognito,
     CfnOutput,
@@ -193,11 +194,27 @@ class GcseAiStack(Stack):
 
         issuer_url = f"https://cognito-idp.{self.region}.amazonaws.com/{user_pool.user_pool_id}"
 
+        # Pre-signup Lambda — blocks registrations not on the email allowlist.
+        # Set ALLOWED_EMAILS (comma-separated) in the deploy environment to restrict sign-ups.
+        pre_signup_fn = lambda_.Function(
+            self, "PreSignupFn",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="pre_signup.handler",
+            code=lambda_.Code.from_asset("../../infrastructure"),
+            environment={
+                "ALLOWED_EMAILS": os.environ.get("ALLOWED_EMAILS", ""),
+                "ALLOWED_DOMAINS": os.environ.get("ALLOWED_DOMAINS", ""),
+            },
+        )
+        user_pool.add_trigger(cognito.UserPoolOperation.PRE_SIGN_UP, pre_signup_fn)
+
         # Update container env with Cognito details so backend can verify JWTs
         container.add_environment("AWS_REGION", self.region)
         container.add_environment("COGNITO_USER_POOL_ID", user_pool.user_pool_id)
         container.add_environment("COGNITO_APP_CLIENT_ID", user_pool_client.user_pool_client_id)
         container.add_environment("COGNITO_ISSUER", issuer_url)
+        # Allow the S3 frontend origin in backend CORS
+        container.add_environment("FRONTEND_URL", frontend_bucket.bucket_website_url)
 
         CfnOutput(self, "CognitoUserPoolId", value=user_pool.user_pool_id)
         CfnOutput(self, "CognitoUserPoolClientId", value=user_pool_client.user_pool_client_id)

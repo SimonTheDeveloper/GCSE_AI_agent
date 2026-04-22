@@ -104,7 +104,7 @@ Before planning a change, read these files if they exist:
 1. `.github/copilot-instructions.md`
 2. `docs/ARCHITECTURE.md`
 3. `docs/EXERCISE_OBJECT_SPEC.md`
-4. `docs/REPOSITORY_MAP.md`
+4. `docs/repository_map.md`
 5. `docs/CONTRIBUTING_AI.md`
 
 These files define the architecture, coding rules, and object model.
