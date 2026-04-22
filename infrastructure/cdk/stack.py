@@ -141,10 +141,17 @@ class GcseAiStack(Stack):
             ],
         )
 
-        # Deploy React build to S3 and invalidate CloudFront cache
+        alb_url = f"http://{service.load_balancer.load_balancer_dns_name}"
+
+        # Deploy React build to S3 and invalidate CloudFront cache.
+        # config.js is generated at deploy time so the browser picks up the ALB URL
+        # via window.__BACKEND_BASE_URL__ without needing a rebuild.
         s3deploy.BucketDeployment(
             self, "DeployReactApp",
-            sources=[s3deploy.Source.asset(os.path.join(_REPO_ROOT, "frontend", "build"))],
+            sources=[
+                s3deploy.Source.asset(os.path.join(_REPO_ROOT, "frontend", "build")),
+                s3deploy.Source.data("config.js", f"window.__BACKEND_BASE_URL__ = '{alb_url}';"),
+            ],
             destination_bucket=frontend_bucket,
             distribution=distribution,
             distribution_paths=["/*"],
