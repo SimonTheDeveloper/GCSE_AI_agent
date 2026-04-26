@@ -10,6 +10,7 @@ from aws_cdk import (
     aws_cognito as cognito,
     aws_cloudfront as cloudfront,
     aws_cloudfront_origins as origins,
+    aws_secretsmanager as secretsmanager,
     CfnOutput,
     aws_s3 as s3,
     aws_s3_deployment as s3deploy,
@@ -69,6 +70,10 @@ class GcseAiStack(Stack):
             task_role=task_role
         )
 
+        openai_secret = secretsmanager.Secret.from_secret_name_v2(
+            self, "OpenAIApiKey", "gcse-ai/openai-api-key"
+        )
+
         container = task_definition.add_container(
             "AppContainer",
             # Build Docker image from the backend directory (two levels up from cdk/)
@@ -81,7 +86,10 @@ class GcseAiStack(Stack):
                 "DYNAMODB_TABLE_NAME": table_name,
                 "DYNAMODB_GSI1": "GSI1",
                 # Placeholder values, updated after Cognito is defined below
-            }
+            },
+            secrets={
+                "OPENAI_API_KEY": ecs.Secret.from_secrets_manager(openai_secret),
+            },
         )
         # Align container port with uvicorn port inside Dockerfile (8001)
         container.add_port_mappings(ecs.PortMapping(container_port=8001))
@@ -115,9 +123,25 @@ class GcseAiStack(Stack):
 
         frontend_bucket = s3.Bucket(self, "FrontendBucket", **bucket_kwargs)
 
+        # ALB idle timeout must be >= CloudFront origin read_timeout to avoid premature 504s.
+        service.load_balancer.set_attribute("idle_timeout.timeout_seconds", "120")
+
         # CloudFront distribution with OAI so S3 stays private
         oai = cloudfront.OriginAccessIdentity(self, "FrontendOAI")
         frontend_bucket.grant_read(oai)
+
+        no_store_policy = cloudfront.ResponseHeadersPolicy(
+            self, "NoStoreHeadersPolicy",
+            custom_headers_behavior=cloudfront.ResponseCustomHeadersBehavior(
+                custom_headers=[
+                    cloudfront.ResponseCustomHeader(
+                        header="Cache-Control",
+                        value="no-store",
+                        override=True,
+                    )
+                ]
+            ),
+        )
 
         distribution = cloudfront.Distribution(
             self, "FrontendDistribution",
@@ -126,10 +150,21 @@ class GcseAiStack(Stack):
                 viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
                 cache_policy=cloudfront.CachePolicy.CACHING_OPTIMIZED,
             ),
-            # Route /api/* to the ALB so the HTTPS frontend never calls HTTP directly.
             additional_behaviors={
+                # Prevent browsers from caching config.js between deployments.
+                "/config.js": cloudfront.BehaviorOptions(
+                    origin=origins.S3Origin(frontend_bucket, origin_access_identity=oai),
+                    cache_policy=cloudfront.CachePolicy.CACHING_DISABLED,
+                    response_headers_policy=no_store_policy,
+                ),
+                # Route /api/* to the ALB — HTTPS frontend never calls HTTP directly.
+                # read_timeout is raised to 120 s to cover slow AI responses.
                 "/api/*": cloudfront.BehaviorOptions(
-                    origin=origins.HttpOrigin(service.load_balancer.load_balancer_dns_name),
+                    origin=origins.HttpOrigin(
+                        service.load_balancer.load_balancer_dns_name,
+                        read_timeout=Duration.seconds(120),
+                        connection_timeout=Duration.seconds(10),
+                    ),
                     allowed_methods=cloudfront.AllowedMethods.ALLOW_ALL,
                     cache_policy=cloudfront.CachePolicy.CACHING_DISABLED,
                     origin_request_policy=cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
