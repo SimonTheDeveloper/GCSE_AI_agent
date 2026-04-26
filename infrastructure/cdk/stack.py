@@ -126,6 +126,15 @@ class GcseAiStack(Stack):
                 viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
                 cache_policy=cloudfront.CachePolicy.CACHING_OPTIMIZED,
             ),
+            # Route /api/* to the ALB so the HTTPS frontend never calls HTTP directly.
+            additional_behaviors={
+                "/api/*": cloudfront.BehaviorOptions(
+                    origin=origins.HttpOrigin(service.load_balancer.load_balancer_dns_name),
+                    allowed_methods=cloudfront.AllowedMethods.ALLOW_ALL,
+                    cache_policy=cloudfront.CachePolicy.CACHING_DISABLED,
+                    origin_request_policy=cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+                ),
+            },
             default_root_object="index.html",
             error_responses=[
                 cloudfront.ErrorResponse(
@@ -141,16 +150,17 @@ class GcseAiStack(Stack):
             ],
         )
 
-        alb_url = f"http://{service.load_balancer.load_balancer_dns_name}"
-
         # Deploy React build to S3 and invalidate CloudFront cache.
-        # config.js is generated at deploy time so the browser picks up the ALB URL
-        # via window.__BACKEND_BASE_URL__ without needing a rebuild.
+        # config.js points the frontend at the CloudFront HTTPS URL so all API
+        # calls go through the /api/* behavior above — no mixed-content issue.
         s3deploy.BucketDeployment(
             self, "DeployReactApp",
             sources=[
                 s3deploy.Source.asset(os.path.join(_REPO_ROOT, "frontend", "build")),
-                s3deploy.Source.data("config.js", f"window.__BACKEND_BASE_URL__ = '{alb_url}';"),
+                s3deploy.Source.data(
+                    "config.js",
+                    f"window.__BACKEND_BASE_URL__ = 'https://{distribution.distribution_domain_name}';"
+                ),
             ],
             destination_bucket=frontend_bucket,
             distribution=distribution,
