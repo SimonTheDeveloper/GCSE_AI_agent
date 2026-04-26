@@ -162,6 +162,8 @@ class GcseAiStack(Stack):
                 "/api/*": cloudfront.BehaviorOptions(
                     origin=origins.HttpOrigin(
                         service.load_balancer.load_balancer_dns_name,
+                        protocol_policy=cloudfront.OriginProtocolPolicy.HTTP_ONLY,
+                        http_port=80,
                         read_timeout=Duration.seconds(120),
                         connection_timeout=Duration.seconds(10),
                     ),
