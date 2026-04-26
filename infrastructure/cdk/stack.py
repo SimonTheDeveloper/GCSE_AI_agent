@@ -157,10 +157,7 @@ class GcseAiStack(Stack):
             self, "DeployReactApp",
             sources=[
                 s3deploy.Source.asset(os.path.join(_REPO_ROOT, "frontend", "build")),
-                s3deploy.Source.data(
-                    "config.js",
-                    f"window.__BACKEND_BASE_URL__ = 'https://{distribution.distribution_domain_name}';"
-                ),
+                s3deploy.Source.data("config.js", "window.__BACKEND_BASE_URL__ = '';"),
             ],
             destination_bucket=frontend_bucket,
             distribution=distribution,
