@@ -11,6 +11,7 @@ from aws_cdk import (
     aws_cloudfront as cloudfront,
     aws_cloudfront_origins as origins,
     aws_secretsmanager as secretsmanager,
+    aws_certificatemanager as acm,
     CfnOutput,
     aws_s3 as s3,
     aws_s3_deployment as s3deploy,
@@ -143,8 +144,15 @@ class GcseAiStack(Stack):
             ),
         )
 
+        certificate_arn = os.environ.get("CERTIFICATE_ARN")
+        custom_domain = "www.studywithseb.com"
+
         distribution = cloudfront.Distribution(
             self, "FrontendDistribution",
+            **(dict(
+                domain_names=[custom_domain],
+                certificate=acm.Certificate.from_certificate_arn(self, "CustomDomainCert", certificate_arn),
+            ) if certificate_arn else {}),
             default_behavior=cloudfront.BehaviorOptions(
                 origin=origins.S3Origin(frontend_bucket, origin_access_identity=oai),
                 viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
@@ -237,10 +245,12 @@ class GcseAiStack(Stack):
         callback_urls = [
             "http://localhost:3000",
             cloudfront_url,
+            f"https://{custom_domain}",
         ]
         logout_urls = [
             "http://localhost:3000",
             cloudfront_url,
+            f"https://{custom_domain}",
         ]
         # Allow env overrides
         if os.environ.get("COGNITO_CALLBACK_URLS"):
@@ -288,7 +298,7 @@ class GcseAiStack(Stack):
         container.add_environment("COGNITO_USER_POOL_ID", user_pool.user_pool_id)
         container.add_environment("COGNITO_APP_CLIENT_ID", user_pool_client.user_pool_client_id)
         container.add_environment("COGNITO_ISSUER", issuer_url)
-        container.add_environment("FRONTEND_URL", cloudfront_url)
+        container.add_environment("FRONTEND_URL", f"https://{custom_domain}" if certificate_arn else cloudfront_url)
 
         CfnOutput(self, "CognitoUserPoolId", value=user_pool.user_pool_id)
         CfnOutput(self, "CognitoUserPoolClientId", value=user_pool_client.user_pool_client_id)
