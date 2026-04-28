@@ -276,7 +276,13 @@ class GCSEHelpGenerator:
         except Exception:
             return None
 
-    def _light_validate_response(self, obj: dict) -> None:
+    def _light_validate_response(self, obj: dict, schema_version: str = "1.0.0") -> None:
+        if schema_version == "2.0.0":
+            self._validate_v2_response(obj)
+        else:
+            self._validate_v1_response(obj)
+
+    def _validate_v1_response(self, obj: dict) -> None:
         required_top = ["schema_version", "request", "exercise", "analysis", "help"]
         for k in required_top:
             if k not in obj:
@@ -293,6 +299,38 @@ class GCSEHelpGenerator:
         nt = obj.get("exercise", {}).get("prompt", {}).get("normalized_text")
         if not nt or not isinstance(nt, str):
             raise GCSEHelpError("exercise.prompt.normalized_text missing or invalid")
+
+    def _validate_v2_response(self, obj: dict) -> None:
+        for field in ["normalised_form", "steps", "full_solution", "explain_it_back"]:
+            if field not in obj:
+                raise GCSEHelpError(f"v2 response missing field: {field}")
+
+        steps = obj.get("steps", [])
+        if not isinstance(steps, list) or len(steps) == 0:
+            raise GCSEHelpError("v2 steps must be a non-empty list")
+
+        for step in steps:
+            n = step.get("step_number", "?")
+            for f in ["step_number", "nudge", "hint", "worked_step", "expected_answer", "common_errors"]:
+                if f not in step:
+                    raise GCSEHelpError(f"v2 step {n} missing field: {f}")
+            errors = step.get("common_errors", [])
+            if not isinstance(errors, list) or len(errors) < 2:
+                raise GCSEHelpError(f"v2 step {n} must have at least 2 common_errors")
+            for err in errors:
+                for ef in ["category", "pattern", "wrong_answer_example", "redirect_question"]:
+                    if ef not in err:
+                        raise GCSEHelpError(f"v2 step {n} common_error missing field: {ef}")
+                valid_categories = {"conceptual", "procedural", "arithmetic", "format"}
+                if err.get("category") not in valid_categories:
+                    raise GCSEHelpError(f"v2 step {n} common_error has invalid category: {err.get('category')}")
+
+        eib = obj.get("explain_it_back", {})
+        for f in ["question", "sentence_starters", "rubric"]:
+            if f not in eib:
+                raise GCSEHelpError(f"v2 explain_it_back missing field: {f}")
+        if not isinstance(eib.get("rubric", []), list) or len(eib.get("rubric", [])) == 0:
+            raise GCSEHelpError("v2 explain_it_back.rubric must be a non-empty list")
 
     def _extract_first_json_object(self, s: str) -> str:
         """Extract the first complete JSON object from a string.
@@ -348,9 +386,11 @@ class GCSEHelpGenerator:
             raise GCSEHelpError("No exercise text provided")
 
         prompt_version, system, user_template = self._get_prompts()
+        # v2 prompt (version >= 2) produces a different output shape — use a separate cache namespace
+        effective_schema_version = "2.0.0" if prompt_version >= 2 else self._config.schema_version
         key = exercise_hash(
             normalized_text,
-            schema_version=self._config.schema_version,
+            schema_version=effective_schema_version,
             prompt_version=prompt_version,
         )
         text_len = len(normalized_text)
@@ -397,19 +437,25 @@ class GCSEHelpGenerator:
         if openai is None:
             raise GCSEHelpError("OpenAI SDK not installed in backend environment")
 
-        base_structure = create_gcse_help_base_structure(
-            normalized_text=normalized_text,
-            raw_text=raw_text,
-            schema_version=self._config.schema_version,
-            uid=uid,
-            year_group=year_group,
-            tier=tier,
-            desired_help_level=desired_help_level,
-            origin_type=origin_type,
-            origin_label=origin_label,
-        )
+        if prompt_version >= 2:
+            # v2: send plain problem text — the system prompt carries all schema context
+            prompt = render_user_prompt(user_template, normalized_text)
+        else:
+            base_structure = create_gcse_help_base_structure(
+                normalized_text=normalized_text,
+                raw_text=raw_text,
+                schema_version=self._config.schema_version,
+                uid=uid,
+                year_group=year_group,
+                tier=tier,
+                desired_help_level=desired_help_level,
+                origin_type=origin_type,
+                origin_label=origin_label,
+            )
+            prompt = render_user_prompt(user_template, json.dumps(base_structure, ensure_ascii=False))
 
-        prompt = render_user_prompt(user_template, json.dumps(base_structure, ensure_ascii=False))
+        # v2 responses are richer (~2k–4k tokens); v1 fits in 2500
+        max_tokens = 4000 if prompt_version >= 2 else 2500
 
         # Support both new (OpenAI()) and legacy SDKs.
         text: str
@@ -427,7 +473,7 @@ class GCSEHelpGenerator:
                     response_format={"type": "json_object"},
                     temperature=0.2,
                     # Avoid truncation that can produce incomplete JSON.
-                    max_tokens=2500,
+                    max_tokens=max_tokens,
                 )
                 text = (resp.choices[0].message.content or "").strip()
             except Exception:
@@ -447,7 +493,7 @@ class GCSEHelpGenerator:
                         {"role": "user", "content": prompt},
                     ],
                     temperature=0.2,
-                    max_tokens=2500,
+                    max_tokens=max_tokens,
                 )
                 text = (resp["choices"][0]["message"]["content"] or "").strip()
             except Exception:
@@ -517,7 +563,7 @@ class GCSEHelpGenerator:
         )
 
         try:
-            self._light_validate_response(obj)
+            self._light_validate_response(obj, schema_version=effective_schema_version)
         except Exception:
             logger.exception("gcse_help_generator.validation_failed key=%s", key_short)
             raise
@@ -529,10 +575,13 @@ class GCSEHelpGenerator:
                 self._cache[key] = obj
                 self._save_cache()
         logger.info(
-            "gcse_help_generator.generate_ok key=%s total_ms=%d",
+            "gcse_help_generator.generate_ok key=%s schema=%s total_ms=%d",
             key_short,
+            effective_schema_version,
             int((time.perf_counter() - start) * 1000),
         )
+        # Attach schema version so callers can dispatch without inspecting the shape
+        obj["_schema_version"] = effective_schema_version
         return obj
 
 def convert_floats_to_decimal(obj: Any) -> Any:

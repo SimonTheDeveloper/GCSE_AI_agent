@@ -116,6 +116,7 @@ class HomeworkHelpJsonReq(BaseModel):
 class HomeworkHelpJsonRes(BaseModel):
     '''Response schema for structured help JSON generation.'''
     result: Dict[str, Any]
+    problem_id: Optional[str] = None  # set when v2 schema is active; used to attach attempts
 
 class ProgressUpdateReq(BaseModel):
     topicId: str

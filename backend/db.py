@@ -198,8 +198,9 @@ def put_prompt_version(
     user_prompt_template: str,
     created_by: str,
     notes: str = "",
+    activate: bool = True,
 ) -> int:
-    """Write a new version record and set it as active. Returns the new version number."""
+    """Write a new version record and optionally set it as active. Returns the new version number."""
     existing = list_prompt_versions(prompt_id)
     new_version = len(existing) + 1
 
@@ -215,14 +216,15 @@ def put_prompt_version(
         "createdBy": created_by,
         "notes": notes,
     })
-    _table.put_item(Item={
-        "PK": f"PROMPT#{prompt_id}",
-        "SK": "ACTIVE",
-        "Type": "PromptActive",
-        "promptId": prompt_id,
-        "version": new_version,
-        "updatedAt": now_iso(),
-    })
+    if activate:
+        _table.put_item(Item={
+            "PK": f"PROMPT#{prompt_id}",
+            "SK": "ACTIVE",
+            "Type": "PromptActive",
+            "promptId": prompt_id,
+            "version": new_version,
+            "updatedAt": now_iso(),
+        })
     return new_version
 
 

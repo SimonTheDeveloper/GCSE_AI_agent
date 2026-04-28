@@ -48,12 +48,15 @@ app = FastAPI()
 @app.on_event("startup")
 def _seed_prompts_on_startup():
     try:
-        from gcse_help_prompts import seed_ingestion_prompt_if_missing
-        seeded = seed_ingestion_prompt_if_missing()
-        if seeded:
-            logger.info("startup: ingestion prompt seeded into DynamoDB")
-        else:
-            logger.info("startup: ingestion prompt already present")
+        from gcse_help_prompts import seed_ingestion_prompt_if_missing, seed_v2_ingestion_prompt_if_missing
+        seeded_v1 = seed_ingestion_prompt_if_missing()
+        seeded_v2 = seed_v2_ingestion_prompt_if_missing()
+        if seeded_v1:
+            logger.info("startup: ingestion prompt v1 seeded into DynamoDB")
+        if seeded_v2:
+            logger.info("startup: ingestion prompt v2 seeded as draft — activate via /admin/prompts when ready")
+        if not seeded_v1 and not seeded_v2:
+            logger.info("startup: ingestion prompts already present")
     except Exception:
         logger.exception("startup: prompt seed failed — admin UI will show 'Not seeded' until resolved")
 
@@ -574,7 +577,21 @@ def homework_help_json(req: HomeworkHelpJsonReq):
             desired_help_level=req.desiredHelpLevel,
             use_cache=req.useCache,
         )
-        return HomeworkHelpJsonRes(result=result)
+
+        problem_id: str | None = None
+        if result.get("_schema_version") == "2.0.0":
+            problem_id = str(uuid4())
+            db.put_problem(
+                problem_id=problem_id,
+                user_id=req.uid,
+                raw_input=req.text,
+                normalised_form=result.get("normalised_form", req.text),
+                topic_tags=result.get("topic_tags", []),
+                difficulty=int(result.get("difficulty", 3)),
+                ai_response=result,
+            )
+
+        return HomeworkHelpJsonRes(result=result, problem_id=problem_id)
     except GCSEHelpError as e:
         logger.info(
             "homework_help_json bad_request uid=%s error=%s",
