@@ -9,6 +9,7 @@ import { Homepage } from './components/Homepage';
 import { HomeworkSubmission } from './components/HomeworkSubmission';
 import { Navigation } from './components/Navigation';
 import { Login } from './components/Login';
+import { AdminPrompts } from './components/AdminPrompts';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './components/ui/resizable';
 import { Button } from './components/ui/button';
 import { Toaster } from './components/ui/sonner';
@@ -131,6 +132,12 @@ export default function App() {
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [currentProblemId, filteredProblems]);
+
+  // Admin route bypasses the login wall — it has its own key-based auth
+  const path = window.location.pathname;
+  if (path === '/admin/prompts') {
+    return <AdminPrompts />;
+  }
 
   // Show login page if not authenticated
   if (!isLoggedIn) {

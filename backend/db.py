@@ -1,6 +1,8 @@
 import os
-from datetime import datetime, timezone
-from typing import List, Dict
+from datetime import datetime, timezone, timedelta
+from decimal import Decimal
+from typing import Any, List, Dict
+from uuid import uuid4
 
 import boto3
 from boto3.dynamodb.conditions import Key
@@ -13,6 +15,7 @@ _dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION, endpoint_url=ENDP
 _table = _dynamodb.Table(TABLE_NAME)
 
 GSI1_NAME = os.getenv("DYNAMODB_GSI1", "GSI1")
+GSI2_NAME = os.getenv("DYNAMODB_GSI2", "GSI2")
 
 
 def table():
@@ -162,6 +165,80 @@ def recent_wrong_cards(uid: str, limit_results: int = 10) -> Dict[str, set]:
                     topic_to_cards.setdefault(topic_id, set()).add(qid)
     return topic_to_cards
 
+# Prompts
+KNOWN_PROMPT_IDS = ["ingestion", "similar", "score", "classify"]
+
+
+def _prompt_version_sk(version: int) -> str:
+    return f"VERSION#{version:04d}"
+
+
+def get_prompt_active(prompt_id: str) -> dict | None:
+    """Return the active pointer record for a prompt, or None if not seeded."""
+    r = _table.get_item(Key={"PK": f"PROMPT#{prompt_id}", "SK": "ACTIVE"})
+    return r.get("Item")
+
+
+def get_prompt_version(prompt_id: str, version: int) -> dict | None:
+    r = _table.get_item(Key={"PK": f"PROMPT#{prompt_id}", "SK": _prompt_version_sk(version)})
+    return r.get("Item")
+
+
+def list_prompt_versions(prompt_id: str) -> list[dict]:
+    items = _query_all(
+        KeyConditionExpression=Key("PK").eq(f"PROMPT#{prompt_id}") & Key("SK").begins_with("VERSION#")
+    )
+    return sorted(items, key=lambda x: x["SK"])
+
+
+def put_prompt_version(
+    prompt_id: str,
+    *,
+    system_prompt: str,
+    user_prompt_template: str,
+    created_by: str,
+    notes: str = "",
+) -> int:
+    """Write a new version record and set it as active. Returns the new version number."""
+    existing = list_prompt_versions(prompt_id)
+    new_version = len(existing) + 1
+
+    _table.put_item(Item={
+        "PK": f"PROMPT#{prompt_id}",
+        "SK": _prompt_version_sk(new_version),
+        "Type": "PromptVersion",
+        "promptId": prompt_id,
+        "version": new_version,
+        "systemPrompt": system_prompt,
+        "userPromptTemplate": user_prompt_template,
+        "createdAt": now_iso(),
+        "createdBy": created_by,
+        "notes": notes,
+    })
+    _table.put_item(Item={
+        "PK": f"PROMPT#{prompt_id}",
+        "SK": "ACTIVE",
+        "Type": "PromptActive",
+        "promptId": prompt_id,
+        "version": new_version,
+        "updatedAt": now_iso(),
+    })
+    return new_version
+
+
+def list_prompts() -> list[dict]:
+    """Return the active-pointer record for every known prompt ID."""
+    results = []
+    for prompt_id in KNOWN_PROMPT_IDS:
+        active = get_prompt_active(prompt_id)
+        results.append({
+            "promptId": prompt_id,
+            "activeVersion": active["version"] if active else None,
+            "updatedAt": active["updatedAt"] if active else None,
+        })
+    return results
+
+
 # Progress helpers
 def save_progress(user_id: str, item: dict) -> dict:
     import time as _time
@@ -196,3 +273,180 @@ def get_progress(user_id: str, topic_id: str | None = None) -> list[dict]:
             KeyConditionExpression=Key("PK").eq(pk) & Key("SK").begins_with("PROGRESS#")
         )
     return resp.get("Items", [])
+
+
+# ── Utility ───────────────────────────────────────────────────────────────
+
+def _floats_to_decimal(obj: Any) -> Any:
+    """DynamoDB doesn't accept Python floats; convert them to Decimal."""
+    if isinstance(obj, list):
+        return [_floats_to_decimal(i) for i in obj]
+    if isinstance(obj, dict):
+        return {k: _floats_to_decimal(v) for k, v in obj.items()}
+    if isinstance(obj, float):
+        return Decimal(str(obj))
+    return obj
+
+
+# ── Problems ──────────────────────────────────────────────────────────────
+
+def put_problem(
+    *,
+    problem_id: str,
+    user_id: str,
+    raw_input: str,
+    normalised_form: str,
+    topic_tags: List[str],
+    difficulty: int,
+    ai_response: dict,
+) -> dict:
+    item: Dict[str, Any] = {
+        "PK": f"PROBLEM#{problem_id}",
+        "SK": "METADATA",
+        "Type": "Problem",
+        "schema_version": 2,
+        "problem_id": problem_id,
+        "user_id": user_id,
+        "created_at": now_iso(),
+        "raw_input": raw_input,
+        "normalised_form": normalised_form,
+        "topic_tags": topic_tags,
+        "difficulty": difficulty,
+        "ai_response": _floats_to_decimal(ai_response),
+        # GSI2: latest attempt for this problem by this user
+        "GSI2PK": f"PROBLEM#{problem_id}#USER#{user_id}",
+    }
+    _table.put_item(Item=item)
+    return item
+
+
+def get_problem(problem_id: str) -> dict | None:
+    r = _table.get_item(Key={"PK": f"PROBLEM#{problem_id}", "SK": "METADATA"})
+    return r.get("Item")
+
+
+# ── Attempts ──────────────────────────────────────────────────────────────
+
+def put_attempt(*, attempt_id: str, problem_id: str, user_id: str) -> dict:
+    started_at = now_iso()
+    item: Dict[str, Any] = {
+        "PK": f"ATTEMPT#{attempt_id}",
+        "SK": "METADATA",
+        "Type": "Attempt",
+        "attempt_id": attempt_id,
+        "problem_id": problem_id,
+        "user_id": user_id,
+        "started_at": started_at,
+        "completed_at": None,
+        "outcome": None,
+        "max_rung_revealed": 0,
+        "active_time_seconds": None,
+        "self_recovered": False,
+        "explanation_text": None,
+        "explanation_rubric": None,
+        # GSI1: all attempts for a user, sorted by time
+        "GSI1PK": f"USER_ATTEMPTS#{user_id}",
+        "GSI1SK": f"ATTEMPT#{started_at}",
+        # GSI2: latest attempt for a specific problem by this user
+        "GSI2PK": f"PROBLEM#{problem_id}#USER#{user_id}",
+        "GSI2SK": f"ATTEMPT#{started_at}",
+    }
+    _table.put_item(Item=item)
+    return item
+
+
+def update_attempt(attempt_id: str, **fields: Any) -> None:
+    """Partial update — only the supplied fields are written."""
+    if not fields:
+        return
+    names: Dict[str, str] = {}
+    values: Dict[str, Any] = {}
+    set_parts: List[str] = []
+    remove_parts: List[str] = []
+    for i, (k, v) in enumerate(fields.items()):
+        name_token = f"#f{i}"
+        names[name_token] = k
+        if v is None:
+            remove_parts.append(name_token)
+        else:
+            val_token = f":v{i}"
+            values[val_token] = v
+            set_parts.append(f"{name_token} = {val_token}")
+
+    expression_parts = []
+    if set_parts:
+        expression_parts.append("SET " + ", ".join(set_parts))
+    if remove_parts:
+        expression_parts.append("REMOVE " + ", ".join(remove_parts))
+
+    kwargs: Dict[str, Any] = {
+        "Key": {"PK": f"ATTEMPT#{attempt_id}", "SK": "METADATA"},
+        "UpdateExpression": " ".join(expression_parts),
+        "ExpressionAttributeNames": names,
+    }
+    if values:
+        kwargs["ExpressionAttributeValues"] = values
+    _table.update_item(**kwargs)
+
+
+def get_attempt(attempt_id: str) -> dict | None:
+    r = _table.get_item(Key={"PK": f"ATTEMPT#{attempt_id}", "SK": "METADATA"})
+    return r.get("Item")
+
+
+def get_attempts_for_user(user_id: str, days: int = 7) -> List[dict]:
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    return _query_all(
+        IndexName=GSI1_NAME,
+        KeyConditionExpression=(
+            Key("GSI1PK").eq(f"USER_ATTEMPTS#{user_id}") &
+            Key("GSI1SK").gte(f"ATTEMPT#{cutoff}")
+        ),
+        ScanIndexForward=False,
+    )
+
+
+def get_latest_attempt_for_problem(problem_id: str, user_id: str) -> dict | None:
+    resp = _table.query(
+        IndexName=GSI2_NAME,
+        KeyConditionExpression=Key("GSI2PK").eq(f"PROBLEM#{problem_id}#USER#{user_id}"),
+        ScanIndexForward=False,
+        Limit=1,
+    )
+    items = resp.get("Items", [])
+    return items[0] if items else None
+
+
+# ── Step events ───────────────────────────────────────────────────────────
+
+def put_step_event(
+    *,
+    attempt_id: str,
+    event_type: str,
+    step_number: int,
+    payload: dict,
+) -> dict:
+    event_id = str(uuid4())
+    created_at = now_iso()
+    item: Dict[str, Any] = {
+        "PK": f"ATTEMPT#{attempt_id}",
+        "SK": f"EVENT#{created_at}#{event_id}",
+        "Type": "StepEvent",
+        "event_id": event_id,
+        "attempt_id": attempt_id,
+        "event_type": event_type,
+        "step_number": step_number,
+        "created_at": created_at,
+        "payload": payload,
+    }
+    _table.put_item(Item=item)
+    return item
+
+
+def get_step_events_for_attempt(attempt_id: str) -> List[dict]:
+    return _query_all(
+        KeyConditionExpression=(
+            Key("PK").eq(f"ATTEMPT#{attempt_id}") &
+            Key("SK").begins_with("EVENT#")
+        ),
+    )

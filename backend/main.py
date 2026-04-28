@@ -25,7 +25,10 @@ from schemas import (BootstrapReq, BootstrapRes, BreakdownItem, Card,
                         NextSteps, Question, QuizStartReq, QuizStartRes, QuizSubmitReq,
                         QuizSubmitRes, ReviewDueGroup, ReviewNextRes,
                         SubjectWithTopics, TopicCardsRes, TopicStub,
-                        HomeworkSubmitRes, HomeworkHelpJsonReq, HomeworkHelpJsonRes)
+                        HomeworkSubmitRes, HomeworkHelpJsonReq, HomeworkHelpJsonRes,
+                        PromptSummary, PromptVersion, PromptSaveReq, PromptSaveRes,
+                        PromptTryReq, PromptTryRes,
+                        AttemptSummary, UserAttemptsRes)
 
 
 
@@ -40,6 +43,19 @@ TABLE_NAME = os.getenv("DYNAMODB_TABLE_NAME", "gcse_app")
 GSI1_NAME = os.getenv("DYNAMODB_GSI1", "GSI1")
 
 app = FastAPI()
+
+
+@app.on_event("startup")
+def _seed_prompts_on_startup():
+    try:
+        from gcse_help_prompts import seed_ingestion_prompt_if_missing
+        seeded = seed_ingestion_prompt_if_missing()
+        if seeded:
+            logger.info("startup: ingestion prompt seeded into DynamoDB")
+        else:
+            logger.info("startup: ingestion prompt already present")
+    except Exception:
+        logger.exception("startup: prompt seed failed — admin UI will show 'Not seeded' until resolved")
 
 # Allowed frontend origins
 ALLOWED_ORIGINS = [
@@ -577,6 +593,153 @@ def homework_help_json(req: HomeworkHelpJsonReq):
             req.tier,
         )
         raise HTTPException(status_code=500, detail="Help generation failed") from e
+
+
+# =========================
+# Admin: prompt management
+# =========================
+
+_ADMIN_API_KEY = os.getenv("ADMIN_API_KEY", "").strip()
+
+
+def _require_admin(request: Request) -> None:
+    if not _ADMIN_API_KEY:
+        raise HTTPException(status_code=503, detail="Admin API not configured (ADMIN_API_KEY not set)")
+    key = request.headers.get("X-Admin-Key", "")
+    if key != _ADMIN_API_KEY:
+        raise HTTPException(status_code=403, detail="Invalid admin key")
+
+
+@app.get("/api/v1/admin/prompts", response_model=List[PromptSummary])
+def admin_list_prompts(request: Request):
+    _require_admin(request)
+    return [PromptSummary(**p) for p in db.list_prompts()]
+
+
+@app.get("/api/v1/admin/prompts/{prompt_id}/versions", response_model=List[PromptVersion])
+def admin_list_versions(prompt_id: str, request: Request):
+    _require_admin(request)
+    items = db.list_prompt_versions(prompt_id)
+    return [PromptVersion(
+        promptId=it["promptId"],
+        version=int(it["version"]),
+        systemPrompt=it["systemPrompt"],
+        userPromptTemplate=it["userPromptTemplate"],
+        createdAt=it["createdAt"],
+        createdBy=it["createdBy"],
+        notes=it.get("notes", ""),
+    ) for it in items]
+
+
+@app.get("/api/v1/admin/prompts/{prompt_id}/versions/{version}", response_model=PromptVersion)
+def admin_get_version(prompt_id: str, version: int, request: Request):
+    _require_admin(request)
+    item = db.get_prompt_version(prompt_id, version)
+    if not item:
+        raise HTTPException(status_code=404, detail="Version not found")
+    return PromptVersion(
+        promptId=item["promptId"],
+        version=int(item["version"]),
+        systemPrompt=item["systemPrompt"],
+        userPromptTemplate=item["userPromptTemplate"],
+        createdAt=item["createdAt"],
+        createdBy=item["createdBy"],
+        notes=item.get("notes", ""),
+    )
+
+
+@app.put("/api/v1/admin/prompts/{prompt_id}", response_model=PromptSaveRes)
+def admin_save_prompt(prompt_id: str, req: PromptSaveReq, request: Request):
+    _require_admin(request)
+    if prompt_id not in db.KNOWN_PROMPT_IDS:
+        raise HTTPException(status_code=400, detail=f"Unknown prompt ID: {prompt_id}")
+    new_version = db.put_prompt_version(
+        prompt_id,
+        system_prompt=req.systemPrompt,
+        user_prompt_template=req.userPromptTemplate,
+        created_by="admin",
+        notes=req.notes,
+    )
+    # Invalidate in-memory prompt cache in the generator singleton if it exists
+    try:
+        GCSEHelpGenerator, _ = _safe_import_gcse_help_generator()
+        if GCSEHelpGenerator is not None:
+            gen = GCSEHelpGenerator()
+            gen.reload_prompt()
+    except Exception:
+        logger.exception("admin_save_prompt reload_prompt failed — will pick up on next generator init")
+    return PromptSaveRes(promptId=prompt_id, version=new_version)
+
+
+@app.get("/api/v1/admin/attempts", response_model=UserAttemptsRes)
+def admin_get_attempts(uid: str, days: int = 7, request: Request = None):
+    """Return all attempts for a user in the last N days with outcome and max_rung_revealed."""
+    _require_admin(request)
+    items = db.get_attempts_for_user(uid, days=days)
+    return UserAttemptsRes(
+        user_id=uid,
+        days=days,
+        attempts=[
+            AttemptSummary(
+                attempt_id=it["attempt_id"],
+                problem_id=it["problem_id"],
+                started_at=it["started_at"],
+                outcome=it.get("outcome"),
+                max_rung_revealed=int(it.get("max_rung_revealed", 0)),
+            )
+            for it in items
+        ],
+    )
+
+
+@app.post("/api/v1/admin/prompts/{prompt_id}/try", response_model=PromptTryRes)
+def admin_try_prompt(prompt_id: str, req: PromptTryReq, request: Request):
+    _require_admin(request)
+    import time as _time
+    from gcse_help_template import create_gcse_help_base_structure
+    from gcse_help_prompts import render_user_prompt
+    from gcse_help_generator import GCSEHelpGenerator, GCSEHelpError, normalize_exercise_text
+    import json as _json
+
+    normalized = normalize_exercise_text(req.testInput)
+    if not normalized:
+        raise HTTPException(status_code=400, detail="testInput is empty")
+
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=503, detail="OPENAI_API_KEY not set")
+
+    base_structure = create_gcse_help_base_structure(
+        normalized_text=normalized,
+        raw_text=req.testInput,
+        schema_version="1.0.0",
+        uid="admin-try",
+    )
+    prompt = render_user_prompt(req.userPromptTemplate, _json.dumps(base_structure, ensure_ascii=False))
+
+    import openai as _openai
+    t0 = _time.perf_counter()
+    try:
+        client = _openai.OpenAI(api_key=api_key)
+        resp = client.chat.completions.create(
+            model=os.getenv("OPENAI_MODEL", "gpt-4.1-mini"),
+            messages=[
+                {"role": "system", "content": req.systemPrompt},
+                {"role": "user", "content": prompt},
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.2,
+            max_tokens=2500,
+        )
+        result = _json.loads(resp.choices[0].message.content or "{}")
+    except Exception as e:
+        logger.exception("admin_try_prompt llm_call_failed")
+        raise HTTPException(status_code=500, detail=f"LLM call failed: {e}") from e
+
+    duration_ms = int((_time.perf_counter() - t0) * 1000)
+    active = db.get_prompt_active(prompt_id)
+    prompt_version = int(active["version"]) if active else 0
+    return PromptTryRes(result=result, promptVersion=prompt_version, durationMs=duration_ms)
 
 
 @app.post("/api/v1/progress", response_model=schemas.ProgressItem)

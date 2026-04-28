@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
 from datetime import datetime
@@ -133,4 +134,69 @@ class ProgressItem(BaseModel):
 
 class ProgressGetRes(BaseModel):
     items: List[ProgressItem]
+
+
+# Admin: prompt management
+class PromptSummary(BaseModel):
+    promptId: str
+    activeVersion: Optional[int]
+    updatedAt: Optional[str]
+
+class PromptVersion(BaseModel):
+    promptId: str
+    version: int
+    systemPrompt: str
+    userPromptTemplate: str
+    createdAt: str
+    createdBy: str
+    notes: str
+
+class PromptSaveReq(BaseModel):
+    systemPrompt: str
+    userPromptTemplate: str
+    notes: str = ""
+
+class PromptSaveRes(BaseModel):
+    promptId: str
+    version: int
+
+class PromptTryReq(BaseModel):
+    systemPrompt: str
+    userPromptTemplate: str
+    testInput: str
+
+class PromptTryRes(BaseModel):
+    result: Dict[str, Any]
+    promptVersion: int
+    durationMs: int
+
+
+# ── Problems, Attempts, Step Events (Ticket 1.4) ──────────────────────────
+
+class AttemptOutcome(str, Enum):
+    solved_unaided = "solved_unaided"
+    solved_with_hints = "solved_with_hints"
+    revealed_full_solution = "revealed_full_solution"
+    abandoned = "abandoned"
+
+
+class StepEventType(str, Enum):
+    attempt_submitted = "attempt_submitted"
+    rung_revealed = "rung_revealed"
+    step_completed = "step_completed"
+    hint_dismissed_before_answer = "hint_dismissed_before_answer"
+
+
+class AttemptSummary(BaseModel):
+    attempt_id: str
+    problem_id: str
+    started_at: str
+    outcome: Optional[str] = None
+    max_rung_revealed: int = 0
+
+
+class UserAttemptsRes(BaseModel):
+    user_id: str
+    days: int
+    attempts: List[AttemptSummary]
 

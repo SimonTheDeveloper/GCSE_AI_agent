@@ -23,6 +23,93 @@ function backendBaseUrl(): string {
   return (typeof process !== 'undefined' ? (process.env.VITE_BACKEND_URL as string | undefined) : undefined) || DEFAULT_BACKEND_BASE;
 }
 
+// Admin prompt management
+
+export type PromptSummary = {
+  promptId: string;
+  activeVersion: number | null;
+  updatedAt: string | null;
+};
+
+export type PromptVersion = {
+  promptId: string;
+  version: number;
+  systemPrompt: string;
+  userPromptTemplate: string;
+  createdAt: string;
+  createdBy: string;
+  notes: string;
+};
+
+export type PromptSaveReq = {
+  systemPrompt: string;
+  userPromptTemplate: string;
+  notes?: string;
+};
+
+export type PromptTryReq = {
+  systemPrompt: string;
+  userPromptTemplate: string;
+  testInput: string;
+};
+
+export type PromptTryRes = {
+  result: any;
+  promptVersion: number;
+  durationMs: number;
+};
+
+async function adminFetch(path: string, adminKey: string, init?: RequestInit): Promise<Response> {
+  const resp = await fetch(`${backendBaseUrl()}${path}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Admin-Key': adminKey,
+      ...(init?.headers ?? {}),
+    },
+  });
+  if (!resp.ok) {
+    let message = '';
+    try {
+      const data = await resp.json();
+      if (data?.detail) message = String(data.detail);
+    } catch { message = await resp.text().catch(() => ''); }
+    throw new Error(message || `Request failed (${resp.status})`);
+  }
+  return resp;
+}
+
+export async function adminListPrompts(adminKey: string): Promise<PromptSummary[]> {
+  const resp = await adminFetch('/api/v1/admin/prompts', adminKey);
+  return resp.json();
+}
+
+export async function adminListVersions(adminKey: string, promptId: string): Promise<PromptVersion[]> {
+  const resp = await adminFetch(`/api/v1/admin/prompts/${promptId}/versions`, adminKey);
+  return resp.json();
+}
+
+export async function adminGetVersion(adminKey: string, promptId: string, version: number): Promise<PromptVersion> {
+  const resp = await adminFetch(`/api/v1/admin/prompts/${promptId}/versions/${version}`, adminKey);
+  return resp.json();
+}
+
+export async function adminSavePrompt(adminKey: string, promptId: string, req: PromptSaveReq): Promise<{ promptId: string; version: number }> {
+  const resp = await adminFetch(`/api/v1/admin/prompts/${promptId}`, adminKey, {
+    method: 'PUT',
+    body: JSON.stringify(req),
+  });
+  return resp.json();
+}
+
+export async function adminTryPrompt(adminKey: string, promptId: string, req: PromptTryReq): Promise<PromptTryRes> {
+  const resp = await adminFetch(`/api/v1/admin/prompts/${promptId}/try`, adminKey, {
+    method: 'POST',
+    body: JSON.stringify(req),
+  });
+  return resp.json();
+}
+
 export async function postHomeworkHelpJson(req: HomeworkHelpJsonReq): Promise<HomeworkHelpJsonRes> {
   const resp = await fetch(`${backendBaseUrl()}/api/v1/homework/help-json`, {
     method: 'POST',

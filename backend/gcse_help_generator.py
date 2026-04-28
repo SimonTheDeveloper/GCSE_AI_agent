@@ -17,7 +17,12 @@ import time
 import boto3  # type: ignore
 
 from gcse_help_template import create_gcse_help_base_structure
-from gcse_help_prompts import get_system_prompt, get_user_prompt
+from gcse_help_prompts import (
+    get_system_prompt,
+    get_user_prompt_template,
+    render_user_prompt,
+    seed_ingestion_prompt_if_missing,
+)
 
 
 
@@ -38,8 +43,8 @@ def normalize_exercise_text(text: str) -> str:
     return t
 
 
-def exercise_hash(normalized_text: str, *, schema_version: str) -> str:
-    payload = f"{schema_version}||{normalized_text}".encode("utf-8")
+def exercise_hash(normalized_text: str, *, schema_version: str, prompt_version: int) -> str:
+    payload = f"{schema_version}||{prompt_version}||{normalized_text}".encode("utf-8")
     return hashlib.sha256(payload).hexdigest()
 
 
@@ -95,6 +100,10 @@ class GCSEHelpGenerator:
         if self._config.cache_backend == "dynamodb":
             self._dynamo_table = self._safe_get_dynamodb_table()
 
+        # In-memory prompt cache: (version, system_prompt, user_prompt_template)
+        self._prompt_cache: tuple[int, str, str] | None = None
+        self._load_prompts()
+
         logger.info(
             "gcse_help_generator.init cache_backend=%s model=%s schema_version=%s dynamo_table=%s dynamo_ready=%s",
             self._config.cache_backend,
@@ -107,6 +116,52 @@ class GCSEHelpGenerator:
     @property
     def config(self) -> GCSEHelpGeneratorConfig:
         return self._config
+
+    def _load_prompts(self) -> None:
+        """Load the active ingestion prompt from DynamoDB into memory.
+
+        Falls back to the module-level constants if DB is unavailable or not seeded.
+        Also seeds the prompt into DB on first run.
+        """
+        try:
+            seeded = seed_ingestion_prompt_if_missing()
+            if seeded:
+                logger.info("gcse_help_generator.prompt_seeded")
+        except Exception:
+            logger.exception("gcse_help_generator.prompt_seed_failed — using module defaults")
+
+        try:
+            import db as _db
+            active = _db.get_prompt_active("ingestion")
+            if active:
+                version = int(active["version"])
+                record = _db.get_prompt_version("ingestion", version)
+                if record:
+                    self._prompt_cache = (
+                        version,
+                        record["systemPrompt"],
+                        record["userPromptTemplate"],
+                    )
+                    logger.info("gcse_help_generator.prompt_loaded version=%d", version)
+                    return
+        except Exception:
+            logger.exception("gcse_help_generator.prompt_load_failed — using module defaults")
+
+        # Fallback to module constants (version 0 = not from DB)
+        self._prompt_cache = (0, get_system_prompt(), get_user_prompt_template())
+        logger.warning("gcse_help_generator.prompt_using_fallback")
+
+    def reload_prompt(self) -> int:
+        """Invalidate the in-memory prompt cache and reload from DB. Returns new version."""
+        self._prompt_cache = None
+        self._load_prompts()
+        return self._prompt_cache[0] if self._prompt_cache else 0
+
+    def _get_prompts(self) -> tuple[int, str, str]:
+        """Return (version, system_prompt, user_prompt_template)."""
+        if self._prompt_cache is None:
+            self._load_prompts()
+        return self._prompt_cache  # type: ignore[return-value]
 
     def _safe_get_dynamodb_table(self):
         try:
@@ -292,7 +347,12 @@ class GCSEHelpGenerator:
         if not normalized_text:
             raise GCSEHelpError("No exercise text provided")
 
-        key = exercise_hash(normalized_text, schema_version=self._config.schema_version)
+        prompt_version, system, user_template = self._get_prompts()
+        key = exercise_hash(
+            normalized_text,
+            schema_version=self._config.schema_version,
+            prompt_version=prompt_version,
+        )
         text_len = len(normalized_text)
         key_short = key[:12]
         logger.info(
@@ -349,8 +409,7 @@ class GCSEHelpGenerator:
             origin_label=origin_label,
         )
 
-        system = get_system_prompt()
-        prompt = get_user_prompt(base_structure)
+        prompt = render_user_prompt(user_template, json.dumps(base_structure, ensure_ascii=False))
 
         # Support both new (OpenAI()) and legacy SDKs.
         text: str
