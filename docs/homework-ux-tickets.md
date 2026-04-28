@@ -10,7 +10,7 @@ The current UI shows the full worked solution next to the input box. Until that'
 
 ---
 
-### Ticket 1.1 — Hide worked solution behind progressive reveal
+### Ticket 1.1 — Hide worked solution behind progressive reveal ✅ Implemented
 
 **Why:** A motivated student reads the worked solution; a tired student copies it. The whole "learn by doing" premise depends on the answer not being visible while the student is supposed to be solving.
 
@@ -37,7 +37,7 @@ The current UI shows the full worked solution next to the input box. Until that'
 
 ---
 
-### Ticket 1.2 — Backend: generate the four rungs at problem-ingestion time
+### Ticket 1.2 — Backend: generate the four rungs at problem-ingestion time ✅ Implemented
 
 **Why:** The AI call that currently generates the explanation needs to produce structured output for all four rungs, plus the per-step diagnostic context Ticket 1.3 will need. Generating these on demand per click is too slow and too expensive.
 
@@ -71,7 +71,7 @@ The current UI shows the full worked solution next to the input box. Until that'
 
 ---
 
-### Ticket 1.3 — Wrong-answer diagnostic state
+### Ticket 1.3 — Wrong-answer diagnostic state ✅ Implemented
 
 **Why:** Right now wrong answers are wasted — the most valuable signal in the whole session is "what did the student actually do?" and we throw it away with a binary correct/incorrect.
 
@@ -96,7 +96,7 @@ The current UI shows the full worked solution next to the input box. Until that'
 
 ---
 
-### Ticket 1.4 — Data model: problems, attempts, step_events
+### Ticket 1.4 — Data model: problems, attempts, step_events ✅ Implemented
 
 **Why:** Without this, none of Layer 2+ pedagogy is possible. Should land before or alongside Ticket 1.3, because 1.3 needs somewhere to write event logs.
 

@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { toast } from 'sonner';
 import { HomeworkSubmissionView, ProcessedResultView } from './views/HomeworkSubmissionView';
 import { MathProblem } from './MathProblem';
+import { HomeworkWorkspace, V2Problem } from './HomeworkWorkspace';
 import { postHomeworkHelpJson } from '../lib/api';
 
 interface HomeworkSubmissionProps {
@@ -44,6 +45,7 @@ export function HomeworkSubmission({ onViewProblem }: HomeworkSubmissionProps) {
   const [lastError, setLastError] = useState<string | null>(null);
   const [rawApiResponse, setRawApiResponse] = useState<any>(null);
   const [showExplanation, setShowExplanation] = useState(false);
+  const [v2Data, setV2Data] = useState<{ problem: V2Problem; attemptId: string } | null>(null);
 
   const processHomework = async () => {
     if (!textInput.trim()) {
@@ -70,6 +72,14 @@ export function HomeworkSubmission({ onViewProblem }: HomeworkSubmissionProps) {
 
       setRawApiResponse(res);
       setProcessingProgress(80);
+
+      // V2 schema — route to progressive rung workspace
+      if (res?.result?._schema_version === '2.0.0' && res.attempt_id) {
+        setV2Data({ problem: res.result as V2Problem, attemptId: res.attempt_id });
+        setProcessingProgress(100);
+        toast.success('Problem processed!');
+        return;
+      }
 
       const tiers = res?.result?.help?.tiers;
 
@@ -200,12 +210,29 @@ export function HomeworkSubmission({ onViewProblem }: HomeworkSubmissionProps) {
 
   const handleSubmitAnother = () => {
     setProcessedProblem(null);
+    setV2Data(null);
     setTextInput('');
     setUploadedFiles([]);
     setPastedImage(null);
   };
 
   const canSubmit = Boolean(textInput.trim() || uploadedFiles.length > 0 || pastedImage);
+
+  if (v2Data && !isProcessing) {
+    return (
+      <div className="space-y-4">
+        <HomeworkWorkspace problem={v2Data.problem} attemptId={v2Data.attemptId} />
+        <div className="text-center">
+          <button
+            onClick={handleSubmitAnother}
+            className="text-sm text-gray-500 underline hover:text-gray-700"
+          >
+            Submit another problem
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (processedProblem && !isProcessing) {
     return (

@@ -116,7 +116,45 @@ class HomeworkHelpJsonReq(BaseModel):
 class HomeworkHelpJsonRes(BaseModel):
     '''Response schema for structured help JSON generation.'''
     result: Dict[str, Any]
-    problem_id: Optional[str] = None  # set when v2 schema is active; used to attach attempts
+    problem_id: Optional[str] = None
+    attempt_id: Optional[str] = None
+
+
+class CommonErrorIn(BaseModel):
+    '''A common error entry from the v2 AI response, sent by the client for classification.'''
+    category: str
+    pattern: str
+    wrong_answer_example: str
+    redirect_question: str
+
+
+class ClassifyAnswerReq(BaseModel):
+    '''Request schema for classifying a student's answer attempt.'''
+    attempt_id: str
+    step_number: int
+    raw_input: str
+    expected_answer: str
+    common_errors: List[CommonErrorIn]
+
+
+class ClassifyAnswerRes(BaseModel):
+    '''Response schema for answer classification.'''
+    is_correct: bool
+    error_category: Optional[str] = None
+    redirect_question: Optional[str] = None
+    matched_pattern: Optional[str] = None
+
+
+class LogEventReq(BaseModel):
+    '''Request schema for logging a step event.'''
+    attempt_id: str
+    event_type: str
+    step_number: int
+    payload: Optional[Dict[str, Any]] = None
+
+
+class LogEventRes(BaseModel):
+    ok: bool
 
 class ProgressUpdateReq(BaseModel):
     topicId: str

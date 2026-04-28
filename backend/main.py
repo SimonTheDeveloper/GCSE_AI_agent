@@ -28,7 +28,8 @@ from schemas import (BootstrapReq, BootstrapRes, BreakdownItem, Card,
                         HomeworkSubmitRes, HomeworkHelpJsonReq, HomeworkHelpJsonRes,
                         PromptSummary, PromptVersion, PromptSaveReq, PromptSaveRes,
                         PromptTryReq, PromptTryRes,
-                        AttemptSummary, UserAttemptsRes)
+                        AttemptSummary, UserAttemptsRes,
+                        ClassifyAnswerReq, ClassifyAnswerRes, LogEventReq, LogEventRes)
 
 
 
@@ -579,8 +580,10 @@ def homework_help_json(req: HomeworkHelpJsonReq):
         )
 
         problem_id: str | None = None
+        attempt_id: str | None = None
         if result.get("_schema_version") == "2.0.0":
             problem_id = str(uuid4())
+            attempt_id = str(uuid4())
             db.put_problem(
                 problem_id=problem_id,
                 user_id=req.uid,
@@ -590,8 +593,13 @@ def homework_help_json(req: HomeworkHelpJsonReq):
                 difficulty=int(result.get("difficulty", 3)),
                 ai_response=result,
             )
+            db.put_attempt(
+                attempt_id=attempt_id,
+                problem_id=problem_id,
+                user_id=req.uid,
+            )
 
-        return HomeworkHelpJsonRes(result=result, problem_id=problem_id)
+        return HomeworkHelpJsonRes(result=result, problem_id=problem_id, attempt_id=attempt_id)
     except GCSEHelpError as e:
         logger.info(
             "homework_help_json bad_request uid=%s error=%s",
@@ -610,6 +618,125 @@ def homework_help_json(req: HomeworkHelpJsonReq):
             req.tier,
         )
         raise HTTPException(status_code=500, detail="Help generation failed") from e
+
+
+# =========================
+# Homework: answer classification & event logging
+# =========================
+
+_MATH_CHARS = set("0123456789+-*/=^().x y")
+
+
+def _normalise_answer(raw: str) -> str:
+    return raw.strip().lower().replace(" ", "")
+
+
+def _has_numeric_content(raw: str) -> bool:
+    return any(c.isdigit() for c in raw)
+
+
+def _extract_rhs_number(raw: str) -> float | None:
+    """Return the rightmost number in an expression like '2x=6' → 6.0, or None."""
+    import re
+    nums = re.findall(r"-?\d+(?:\.\d+)?", raw)
+    if not nums:
+        return None
+    try:
+        return float(nums[-1])
+    except ValueError:
+        return None
+
+
+@app.post("/api/v1/homework/classify-answer", response_model=ClassifyAnswerRes)
+def classify_answer(req: ClassifyAnswerReq):
+    normalised_input = _normalise_answer(req.raw_input)
+    normalised_expected = _normalise_answer(req.expected_answer)
+
+    # 1. Exact match → correct
+    if normalised_input == normalised_expected:
+        try:
+            db.put_step_event(
+                attempt_id=req.attempt_id,
+                event_type="attempt_submitted",
+                step_number=req.step_number,
+                payload={"raw_input": req.raw_input, "correct": True},
+            )
+        except Exception:
+            logger.exception("classify_answer put_step_event failed attempt=%s", req.attempt_id)
+        return ClassifyAnswerRes(is_correct=True)
+
+    # 2. No numeric content → format error
+    if not _has_numeric_content(req.raw_input):
+        error = ClassifyAnswerRes(
+            is_correct=False,
+            error_category="format",
+            redirect_question="Make sure your answer includes a number. For example, write '6' or 'x = 6'.",
+        )
+        _log_wrong_answer(req, "format", None, None)
+        return error
+
+    # 3. Match against common_errors wrong_answer_example
+    for ce in req.common_errors:
+        if _normalise_answer(ce.wrong_answer_example) == normalised_input:
+            _log_wrong_answer(req, ce.category, ce.pattern, ce.redirect_question)
+            return ClassifyAnswerRes(
+                is_correct=False,
+                error_category=ce.category,
+                redirect_question=ce.redirect_question,
+                matched_pattern=ce.pattern,
+            )
+
+    # 4. RHS numbers differ by ≤3 → arithmetic slip
+    rhs_input = _extract_rhs_number(req.raw_input)
+    rhs_expected = _extract_rhs_number(req.expected_answer)
+    if rhs_input is not None and rhs_expected is not None and abs(rhs_input - rhs_expected) <= 3:
+        _log_wrong_answer(req, "arithmetic", None, None)
+        return ClassifyAnswerRes(
+            is_correct=False,
+            error_category="arithmetic",
+            redirect_question="You're close! Double-check your arithmetic — it looks like a small calculation slip.",
+        )
+
+    # 5. Fallback → conceptual
+    _log_wrong_answer(req, "conceptual", None, None)
+    return ClassifyAnswerRes(
+        is_correct=False,
+        error_category="conceptual",
+        redirect_question=None,
+    )
+
+
+def _log_wrong_answer(req: ClassifyAnswerReq, category: str, pattern: str | None, redirect: str | None) -> None:
+    try:
+        db.put_step_event(
+            attempt_id=req.attempt_id,
+            event_type="attempt_submitted",
+            step_number=req.step_number,
+            payload={
+                "raw_input": req.raw_input,
+                "correct": False,
+                "error_category": category,
+                "matched_pattern": pattern,
+                "redirect_question": redirect,
+            },
+        )
+    except Exception:
+        logger.exception("classify_answer put_step_event failed attempt=%s", req.attempt_id)
+
+
+@app.post("/api/v1/homework/log-event", response_model=LogEventRes)
+def log_event(req: LogEventReq):
+    try:
+        db.put_step_event(
+            attempt_id=req.attempt_id,
+            event_type=req.event_type,
+            step_number=req.step_number,
+            payload=req.payload or {},
+        )
+    except Exception:
+        logger.exception("log_event failed attempt=%s event=%s", req.attempt_id, req.event_type)
+        raise HTTPException(status_code=500, detail="Failed to log event")
+    return LogEventRes(ok=True)
 
 
 # =========================

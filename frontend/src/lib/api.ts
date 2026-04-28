@@ -9,6 +9,37 @@ export type HomeworkHelpJsonReq = {
 
 export type HomeworkHelpJsonRes = {
   result: any;
+  problem_id?: string | null;
+  attempt_id?: string | null;
+};
+
+export type CommonErrorIn = {
+  category: string;
+  pattern: string;
+  wrong_answer_example: string;
+  redirect_question: string;
+};
+
+export type ClassifyAnswerReq = {
+  attempt_id: string;
+  step_number: number;
+  raw_input: string;
+  expected_answer: string;
+  common_errors: CommonErrorIn[];
+};
+
+export type ClassifyAnswerRes = {
+  is_correct: boolean;
+  error_category?: string | null;
+  redirect_question?: string | null;
+  matched_pattern?: string | null;
+};
+
+export type LogEventReq = {
+  attempt_id: string;
+  event_type: string;
+  step_number: number;
+  payload?: Record<string, unknown>;
 };
 
 const DEFAULT_BACKEND_BASE = 'http://127.0.0.1:8001';
@@ -108,6 +139,24 @@ export async function adminTryPrompt(adminKey: string, promptId: string, req: Pr
     body: JSON.stringify(req),
   });
   return resp.json();
+}
+
+export async function classifyAnswer(req: ClassifyAnswerReq): Promise<ClassifyAnswerRes> {
+  const resp = await fetch(`${backendBaseUrl()}/api/v1/homework/classify-answer`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  });
+  if (!resp.ok) throw new Error(`classify-answer failed (${resp.status})`);
+  return resp.json();
+}
+
+export async function logEvent(req: LogEventReq): Promise<void> {
+  await fetch(`${backendBaseUrl()}/api/v1/homework/log-event`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  });
 }
 
 export async function postHomeworkHelpJson(req: HomeworkHelpJsonReq): Promise<HomeworkHelpJsonRes> {
