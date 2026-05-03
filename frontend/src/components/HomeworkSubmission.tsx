@@ -48,8 +48,8 @@ export function HomeworkSubmission({ onViewProblem }: HomeworkSubmissionProps) {
   const [showExplanation, setShowExplanation] = useState(false);
 
   const processHomework = async () => {
-    if (!textInput.trim()) {
-      toast.error('Please type a problem first (file OCR wiring comes next)');
+    if (!textInput.trim() && !pastedImage) {
+      toast.error('Please type your problem or paste a screenshot');
       return;
     }
 
@@ -66,6 +66,7 @@ export function HomeworkSubmission({ onViewProblem }: HomeworkSubmissionProps) {
       const res = await postHomeworkHelpJson({
         uid,
         text: textInput,
+        ...(pastedImage ? { image_data_url: pastedImage } : {}),
         yearGroup: 9,
         useCache: true,
       });

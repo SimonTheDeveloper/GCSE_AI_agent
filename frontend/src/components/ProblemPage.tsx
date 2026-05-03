@@ -56,6 +56,7 @@ export function ProblemPage({ defaultMode = 'guided' }: Props) {
   const [submission, setSubmission] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [history, setHistory] = useState<SubmissionRecord[]>([]);
+  const [showSolution, setShowSolution] = useState(false);
 
   const attemptId = useMemo(() => crypto.randomUUID(), []);
 
@@ -158,13 +159,25 @@ export function ProblemPage({ defaultMode = 'guided' }: Props) {
       : FALLBACK_SIMPLER_OPENING_PROMPT;
   const openingPrompt = mode === 'simpler' ? simplerOpening : mainOpening;
 
+  const solutionText: string | null =
+    mode === 'simpler' && hasSimpler
+      ? ((simplerVersion as any).solution as string) || null
+      : (problem.ai_response?.full_solution as string | undefined) || null;
+
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-6">
       {/* Question */}
-      <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+      <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
         <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">
           {mode === 'simpler' ? 'Simpler version' : 'Question'}
         </p>
+        {problem.image_url && mode !== 'simpler' && (
+          <img
+            src={problem.image_url}
+            alt="Question screenshot"
+            className="mb-3 max-h-96 w-auto rounded border border-gray-200"
+          />
+        )}
         <p className="text-base font-medium text-gray-900">{displayedQuestion}</p>
       </div>
 
@@ -205,10 +218,20 @@ export function ProblemPage({ defaultMode = 'guided' }: Props) {
             onChange={(e) => setSubmission(e.target.value)}
             placeholder="Show your working — type whatever you'd try."
             rows={6}
-            className="font-mono text-sm"
+            className="text-sm"
             aria-label="Your working"
           />
-          <div className="flex justify-end">
+          <div className="flex justify-between items-center">
+            {solutionText ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-amber-700 border-amber-300 hover:bg-amber-50"
+                onClick={() => setShowSolution((v) => !v)}
+              >
+                {showSolution ? 'Hide solution' : 'Show complete working'} ↓
+              </Button>
+            ) : <span />}
             <Button onClick={handleSubmit} disabled={submitting || !submission.trim()}>
               {submitting ? 'Checking…' : 'Check'}
             </Button>
@@ -216,11 +239,21 @@ export function ProblemPage({ defaultMode = 'guided' }: Props) {
         </div>
       )}
 
+      {/* Full solution panel */}
+      {showSolution && solutionText && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+            Complete working
+          </p>
+          <p className="whitespace-pre-wrap text-sm text-gray-800">{solutionText}</p>
+        </div>
+      )}
+
       {/* Completion — track-aware. Simpler-version success offers a one-click
           return to the original problem; main-problem success shows the
           canonical solution. */}
       {allDoneInTrack && mode === 'simpler' && (
-        <div className="rounded-lg border border-green-300 bg-green-50 p-5 text-center">
+        <div className="rounded-xl border border-green-300 bg-green-50 p-5 text-center">
           <p className="text-lg font-semibold text-green-800">
             Nicely done with the simpler version.
           </p>
@@ -231,7 +264,7 @@ export function ProblemPage({ defaultMode = 'guided' }: Props) {
         </div>
       )}
       {allDoneInTrack && mode !== 'simpler' && (
-        <div className="rounded-lg border border-green-300 bg-green-50 p-5 text-center">
+        <div className="rounded-xl border border-green-300 bg-green-50 p-5 text-center">
           <p className="text-lg font-semibold text-green-800">Nicely done — you got it.</p>
           <p className="mt-1 text-sm text-green-700">
             {(problem.ai_response?.full_solution as string | undefined) ||
@@ -270,47 +303,30 @@ function ModeToggle({
 }) {
   return (
     <div className="flex gap-2">
-      <ModeButton active={mode === 'guided'} onClick={() => onChange('guided')}>
+      <Button
+        variant={mode === 'guided' ? 'default' : 'outline'}
+        size="sm"
+        onClick={() => onChange('guided')}
+      >
         Guide me
-      </ModeButton>
-      <ModeButton active={mode === 'free'} onClick={() => onChange('free')}>
+      </Button>
+      <Button
+        variant={mode === 'free' ? 'default' : 'outline'}
+        size="sm"
+        onClick={() => onChange('free')}
+      >
         Try yourself
-      </ModeButton>
-      <ModeButton
-        active={mode === 'simpler'}
+      </Button>
+      <Button
+        variant={mode === 'simpler' ? 'default' : 'outline'}
+        size="sm"
         disabled={!simplerAvailable}
         title={simplerAvailable ? undefined : 'Not available for this problem'}
         onClick={() => simplerAvailable && onChange('simpler')}
       >
         Simpler version
-      </ModeButton>
+      </Button>
     </div>
-  );
-}
-
-function ModeButton({
-  active,
-  disabled,
-  title,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  disabled?: boolean;
-  title?: string;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  const base = 'rounded-md px-3 py-1.5 text-sm font-medium transition-colors';
-  const cls = disabled
-    ? `${base} cursor-not-allowed border border-gray-200 bg-gray-50 text-gray-400`
-    : active
-      ? `${base} border border-gray-900 bg-gray-900 text-white`
-      : `${base} border border-gray-300 bg-white text-gray-700 hover:bg-gray-50`;
-  return (
-    <button type="button" disabled={disabled} title={title} onClick={onClick} className={cls}>
-      {children}
-    </button>
   );
 }
 
@@ -318,7 +334,7 @@ function ModeButton({
 
 function NextPromptBubble({ text }: { text: string }) {
   return (
-    <div className="rounded-md border border-blue-200 bg-blue-50 px-4 py-3">
+    <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
       <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-blue-500">
         Next move
       </p>
@@ -334,8 +350,8 @@ function SubmissionFeedback({ record }: { record: SubmissionRecord }) {
 
   if (result.is_correct) {
     return (
-      <div className="rounded-md border border-green-200 bg-green-50 px-4 py-3">
-        <p className="whitespace-pre-wrap font-mono text-sm text-gray-900">{submission}</p>
+      <div className="rounded-xl border border-green-200 bg-green-50 p-4">
+        <p className="whitespace-pre-wrap text-sm text-gray-900">{submission}</p>
         <p className="mt-2 text-xs font-semibold text-green-700">✓ That's the answer.</p>
       </div>
     );
@@ -343,8 +359,8 @@ function SubmissionFeedback({ record }: { record: SubmissionRecord }) {
 
   if (result.prose_feedback) {
     return (
-      <div className="rounded-md border border-gray-200 bg-white p-4">
-        <p className="whitespace-pre-wrap font-mono text-sm text-gray-900">{submission}</p>
+      <div className="rounded-xl border border-gray-200 bg-white p-4">
+        <p className="whitespace-pre-wrap text-sm text-gray-900">{submission}</p>
         <p className="mt-3 border-t border-gray-100 pt-3 text-sm text-gray-700">
           {result.prose_feedback}
         </p>
@@ -353,8 +369,8 @@ function SubmissionFeedback({ record }: { record: SubmissionRecord }) {
   }
 
   return (
-    <div className="rounded-md border border-gray-200 bg-white p-4">
-      <p className="mb-3 whitespace-pre-wrap font-mono text-sm leading-6">
+    <div className="rounded-xl border border-gray-200 bg-white p-4">
+      <p className="mb-3 whitespace-pre-wrap text-sm leading-6">
         {result.feedback_segments.map((seg, i) => (
           <SegmentSpan key={i} seg={seg} />
         ))}

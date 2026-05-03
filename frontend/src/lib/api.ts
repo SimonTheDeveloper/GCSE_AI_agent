@@ -1,6 +1,7 @@
 export type HomeworkHelpJsonReq = {
   uid: string;
   text: string;
+  image_data_url?: string;
   yearGroup?: number | null;
   tier?: string;
   desiredHelpLevel?: string;
@@ -93,6 +94,7 @@ export type ProblemRes = {
   difficulty: number;
   ai_response: any;
   created_at: string;
+  image_url?: string;
 };
 
 const DEFAULT_BACKEND_BASE = 'http://127.0.0.1:8001';

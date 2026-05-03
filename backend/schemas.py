@@ -107,6 +107,7 @@ class HomeworkHelpJsonReq(BaseModel):
     '''Request schema for generating structured help JSON.'''
     uid: str
     text: str
+    image_data_url: Optional[str] = None
     yearGroup: int | None = 9
     tier: str = "unknown"
     desiredHelpLevel: str = "auto"
@@ -203,6 +204,7 @@ class ProblemRes(BaseModel):
     difficulty: int
     ai_response: Dict[str, Any]
     created_at: str
+    image_url: Optional[str] = None
 
 class ProgressUpdateReq(BaseModel):
     topicId: str

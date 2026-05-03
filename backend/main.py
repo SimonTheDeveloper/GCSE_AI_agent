@@ -457,6 +457,39 @@ def _safe_import_gcse_help_generator():
         return None, None
 
 
+def _extract_text_from_image(data_url: str) -> str:
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY not set")
+    openai = _safe_import_openai()
+    if openai is None:
+        raise RuntimeError("openai package not installed")
+    if "," in data_url:
+        header, b64 = data_url.split(",", 1)
+        mime = header.split(":")[1].split(";")[0] if ":" in header else "image/png"
+    else:
+        b64, mime = data_url, "image/png"
+    client = openai.OpenAI(api_key=api_key)
+    resp = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": "Extract the exact text of GCSE exam questions from screenshot images. Return only the question text as it appears. No commentary.",
+            },
+            {
+                "role": "user",
+                "content": [
+                    {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64}"}},
+                    {"type": "text", "text": "Extract the GCSE question text from this image."},
+                ],
+            },
+        ],
+        max_tokens=1000,
+    )
+    return (resp.choices[0].message.content or "").strip()
+
+
 @app.post("/api/v1/homework/submit", response_model=HomeworkSubmitRes)
 async def homework_submit(
     uid: str = Form(...),
@@ -582,8 +615,16 @@ def homework_help_json(req: HomeworkHelpJsonReq):
 
     try:
         gen = GCSEHelpGenerator()
+        effective_text = req.text
+        if req.image_data_url:
+            try:
+                extracted = _extract_text_from_image(req.image_data_url)
+                if extracted:
+                    effective_text = f"{extracted}\n\n{req.text.strip()}".strip() if req.text.strip() else extracted
+            except Exception as _e:
+                logger.warning("homework_help_json image_extraction_failed: %s", _e)
         result = gen.generate(
-            raw_text=req.text,
+            raw_text=effective_text,
             uid=req.uid,
             year_group=req.yearGroup,
             tier=req.tier,
@@ -599,14 +640,21 @@ def homework_help_json(req: HomeworkHelpJsonReq):
         if result.get("_schema_version") in ("2.0.0", "3.0.0"):
             problem_id = str(uuid4())
             attempt_id = str(uuid4())
+            image_s3_key: str | None = None
+            if req.image_data_url:
+                try:
+                    image_s3_key = db.upload_problem_image(problem_id, req.image_data_url)
+                except Exception as _e:
+                    logger.warning("homework_help_json image_upload_failed: %s", _e)
             db.put_problem(
                 problem_id=problem_id,
                 user_id=req.uid,
-                raw_input=req.text,
-                normalised_form=result.get("normalised_form", req.text),
+                raw_input=effective_text,
+                normalised_form=result.get("normalised_form", effective_text),
                 topic_tags=result.get("topic_tags", []),
                 difficulty=int(result.get("difficulty", 3)),
                 ai_response=result,
+                image_s3_key=image_s3_key,
             )
             db.put_attempt(
                 attempt_id=attempt_id,
@@ -675,6 +723,12 @@ def get_problem(problem_id: str):
     item = db.get_problem(problem_id)
     if not item:
         raise HTTPException(status_code=404, detail="Problem not found")
+    image_url: str | None = None
+    if item.get("image_s3_key"):
+        try:
+            image_url = db.get_problem_image_url(item["image_s3_key"])
+        except Exception as _e:
+            logger.warning("get_problem presign_failed problem_id=%s: %s", problem_id, _e)
     return ProblemRes(
         problem_id=item["problem_id"],
         user_id=item["user_id"],
@@ -684,6 +738,7 @@ def get_problem(problem_id: str):
         difficulty=int(item.get("difficulty", 3)),
         ai_response=dict(item.get("ai_response", {}) or {}),
         created_at=item.get("created_at", ""),
+        image_url=image_url,
     )
 
 

@@ -1,7 +1,8 @@
+import base64
 import os
 from datetime import datetime, timezone, timedelta
 from decimal import Decimal
-from typing import Any, List, Dict
+from typing import Any, List, Dict, Optional
 from uuid import uuid4
 
 import boto3
@@ -10,9 +11,11 @@ from boto3.dynamodb.conditions import Key
 AWS_REGION = os.getenv("AWS_REGION") or "eu-west-1"
 TABLE_NAME = os.getenv("DYNAMODB_TABLE_NAME", "gcse_app")
 ENDPOINT_URL = os.getenv("DYNAMODB_ENDPOINT_URL")  # optional local endpoint
+S3_IMAGES_BUCKET = os.getenv("S3_IMAGES_BUCKET")
 
 _dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION, endpoint_url=ENDPOINT_URL)
 _table = _dynamodb.Table(TABLE_NAME)
+_s3 = boto3.client("s3", region_name=AWS_REGION) if S3_IMAGES_BUCKET else None
 
 GSI1_NAME = os.getenv("DYNAMODB_GSI1", "GSI1")
 GSI2_NAME = os.getenv("DYNAMODB_GSI2", "GSI2")
@@ -290,6 +293,37 @@ def _floats_to_decimal(obj: Any) -> Any:
     return obj
 
 
+# ── S3 image helpers ──────────────────────────────────────────────────────
+
+def upload_problem_image(problem_id: str, data_url: str) -> Optional[str]:
+    """Upload a base64 Data URL image to S3. Returns the S3 key, or None if S3 is not configured."""
+    if not _s3 or not S3_IMAGES_BUCKET:
+        return None
+    if "," in data_url:
+        header, b64 = data_url.split(",", 1)
+        mime = header.split(":")[1].split(";")[0] if ":" in header else "image/png"
+    else:
+        b64, mime = data_url, "image/png"
+    ext = mime.split("/")[-1] if "/" in mime else "png"
+    key = f"problem-images/{problem_id}.{ext}"
+    _s3.put_object(
+        Bucket=S3_IMAGES_BUCKET,
+        Key=key,
+        Body=base64.b64decode(b64),
+        ContentType=mime,
+    )
+    return key
+
+
+def get_problem_image_url(s3_key: str, expires_in: int = 3600) -> str:
+    """Generate a presigned URL for a stored problem image."""
+    return _s3.generate_presigned_url(
+        "get_object",
+        Params={"Bucket": S3_IMAGES_BUCKET, "Key": s3_key},
+        ExpiresIn=expires_in,
+    )
+
+
 # ── Problems ──────────────────────────────────────────────────────────────
 
 def put_problem(
@@ -301,6 +335,7 @@ def put_problem(
     topic_tags: List[str],
     difficulty: int,
     ai_response: dict,
+    image_s3_key: Optional[str] = None,
 ) -> dict:
     item: Dict[str, Any] = {
         "PK": f"PROBLEM#{problem_id}",
@@ -318,6 +353,8 @@ def put_problem(
         # GSI2: latest attempt for this problem by this user
         "GSI2PK": f"PROBLEM#{problem_id}#USER#{user_id}",
     }
+    if image_s3_key:
+        item["image_s3_key"] = image_s3_key
     _table.put_item(Item=item)
     return item
 
