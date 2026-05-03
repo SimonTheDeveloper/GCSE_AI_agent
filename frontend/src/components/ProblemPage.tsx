@@ -251,7 +251,7 @@ export function ProblemPage({ defaultMode = 'guided' }: Props) {
 
       {/* Completion — track-aware. Simpler-version success offers a one-click
           return to the original problem; main-problem success shows the
-          canonical solution. */}
+          canonical solution and clear next-step actions. */}
       {allDoneInTrack && mode === 'simpler' && (
         <div className="rounded-xl border border-green-300 bg-green-50 p-5 text-center">
           <p className="text-lg font-semibold text-green-800">
@@ -264,23 +264,24 @@ export function ProblemPage({ defaultMode = 'guided' }: Props) {
         </div>
       )}
       {allDoneInTrack && mode !== 'simpler' && (
-        <div className="rounded-xl border border-green-300 bg-green-50 p-5 text-center">
-          <p className="text-lg font-semibold text-green-800">Nicely done — you got it.</p>
-          <p className="mt-1 text-sm text-green-700">
-            {(problem.ai_response?.full_solution as string | undefined) ||
-              'You reached the canonical answer.'}
-          </p>
+        <div className="rounded-xl border border-green-300 bg-green-50 p-6 text-center space-y-4">
+          <div>
+            <p className="text-2xl font-bold text-green-800">Problem solved!</p>
+            <p className="mt-1 text-sm text-green-700">
+              {(problem.ai_response?.full_solution as string | undefined) ||
+                'You reached the canonical answer.'}
+            </p>
+          </div>
+          <div className="flex justify-center gap-3 pt-2">
+            <Button onClick={() => navigate('/homework')}>
+              Submit another exercise
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/practice')}>
+              Review learned topics
+            </Button>
+          </div>
         </div>
       )}
-
-      <div className="text-center">
-        <button
-          onClick={() => navigate('/homework')}
-          className="text-sm text-gray-500 underline hover:text-gray-700"
-        >
-          Back to homework
-        </button>
-      </div>
 
       {/* Debug panel — shows the stored problem record including the full AI
           response. Mirrors the old workspace's debug panel so the same JSON

@@ -33,6 +33,8 @@ export interface MathProblemViewProps {
   onToggleHint: () => void;
   onReset: () => void;
   onKeyDown?: (e: React.KeyboardEvent) => void;
+  onSubmitAnother?: () => void;
+  onReviewTopics?: () => void;
 }
 
 export function MathProblemView({
@@ -50,7 +52,9 @@ export function MathProblemView({
   onGoToStep,
   onToggleHint,
   onReset,
-  onKeyDown
+  onKeyDown,
+  onSubmitAnother,
+  onReviewTopics,
 }: MathProblemViewProps) {
   const currentStep = problem.steps[currentStepIndex];
 
@@ -215,14 +219,23 @@ export function MathProblemView({
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-6 w-6 text-green-600" />
                   <div>
-                    <h4 className="text-green-800">Problem Completed! 🎉</h4>
+                    <h4 className="text-green-800">Problem solved!</h4>
                     <p className="text-green-700">Excellent work! You solved all steps correctly.</p>
                   </div>
                 </div>
               </Alert>
-              <Button onClick={onReset} variant="outline">
-                Try Again
-              </Button>
+              {(onSubmitAnother || onReviewTopics) ? (
+                <div className="flex gap-3">
+                  {onSubmitAnother && (
+                    <Button onClick={onSubmitAnother}>Submit another exercise</Button>
+                  )}
+                  {onReviewTopics && (
+                    <Button variant="outline" onClick={onReviewTopics}>Review learned topics</Button>
+                  )}
+                </div>
+              ) : (
+                <Button onClick={onReset} variant="outline">Try Again</Button>
+              )}
             </div>
           )}
 

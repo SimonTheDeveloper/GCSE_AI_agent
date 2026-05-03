@@ -18,9 +18,11 @@ interface MathProblemProps {
   onSolved: (problemId: number) => void;
   currentStepIndex: number;
   onStepChange: (stepIndex: number) => void;
+  onSubmitAnother?: () => void;
+  onReviewTopics?: () => void;
 }
 
-export function MathProblem({ problem, onSolved, currentStepIndex, onStepChange }: MathProblemProps) {
+export function MathProblem({ problem, onSolved, currentStepIndex, onStepChange, onSubmitAnother, onReviewTopics }: MathProblemProps) {
   const [stepAnswers, setStepAnswers] = useState<string[]>(new Array(problem.steps.length).fill(''));
   const [stepFeedback, setStepFeedback] = useState<('correct' | 'incorrect' | null)[]>(
     new Array(problem.steps.length).fill(null)
@@ -131,6 +133,8 @@ export function MathProblem({ problem, onSolved, currentStepIndex, onStepChange 
       onToggleHint={() => setShowHint(!showHint)}
       onReset={resetProblem}
       onKeyDown={handleKeyDown}
+      onSubmitAnother={onSubmitAnother}
+      onReviewTopics={onReviewTopics}
     />
   );
 }

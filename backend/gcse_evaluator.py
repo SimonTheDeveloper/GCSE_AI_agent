@@ -456,8 +456,9 @@ def evaluate_submission(
         if isinstance(candidate, str) and candidate.strip():
             next_prompt = candidate.strip()
 
+    all_correct = cleaned and all(s.get("status") == "correct" for s in cleaned)
     return EvaluationOutcome(
-        is_correct=False,
+        is_correct=bool(all_correct),
         segments=cleaned,
         prose_feedback=None,
         next_prompt=next_prompt,

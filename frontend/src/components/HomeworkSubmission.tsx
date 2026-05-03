@@ -238,6 +238,8 @@ export function HomeworkSubmission({ onViewProblem }: HomeworkSubmissionProps) {
             onSolved={() => {}}
             currentStepIndex={currentStepIndex}
             onStepChange={setCurrentStepIndex}
+            onSubmitAnother={handleSubmitAnother}
+            onReviewTopics={() => navigate('/practice')}
           />
         }
       />
