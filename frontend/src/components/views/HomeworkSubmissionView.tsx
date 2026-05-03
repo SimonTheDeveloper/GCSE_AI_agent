@@ -277,6 +277,28 @@ export function HomeworkSubmissionView({
   );
 }
 
+export function RawApiResponsePanel({ rawApiResponse }: { rawApiResponse: any }) {
+  const [isOpen, setIsOpen] = useState(false);
+  if (!rawApiResponse) return null;
+  return (
+    <Card className="p-6 mt-6">
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" className="w-full justify-between p-4">
+            <span className="font-semibold">Raw API Response (Debug)</span>
+            <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'transform rotate-180' : ''}`} />
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="mt-4 p-4 bg-gray-900 text-gray-100 rounded-lg overflow-auto max-h-96">
+            <pre className="text-xs">{JSON.stringify(rawApiResponse, null, 2)}</pre>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
+  );
+}
+
 // Processed result view component
 export interface ProcessedResultViewProps {
   textInput: string;
@@ -312,8 +334,6 @@ export function ProcessedResultView({
   explanation,
   currentStepIndex
 }: ProcessedResultViewProps) {
-  const [isApiResponseOpen, setIsApiResponseOpen] = useState(false);
-  
   return (
     <div className="container mx-auto px-6 py-8">
       <Card className="p-6 mb-6">
@@ -416,27 +436,7 @@ export function ProcessedResultView({
         </div>
       </Card>
 
-      {rawApiResponse && (
-        <Card className="p-6 mt-6">
-          <Collapsible open={isApiResponseOpen} onOpenChange={setIsApiResponseOpen}>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" className="w-full justify-between p-4">
-                <span className="font-semibold">Raw API Response (Debug)</span>
-                <ChevronDown className={`h-4 w-4 transition-transform ${
-                  isApiResponseOpen ? 'transform rotate-180' : ''
-                }`} />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="mt-4 p-4 bg-gray-900 text-gray-100 rounded-lg overflow-auto max-h-96">
-                <pre className="text-xs">
-                  {JSON.stringify(rawApiResponse, null, 2)}
-                </pre>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-        </Card>
-      )}
+      <RawApiResponsePanel rawApiResponse={rawApiResponse} />
     </div>
   );
 }

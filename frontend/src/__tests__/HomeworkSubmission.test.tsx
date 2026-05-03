@@ -2,6 +2,12 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HomeworkSubmission } from '../components/HomeworkSubmission';
 
+// react-router-dom's ESM bundle uses TextEncoder which isn't in jsdom by
+// default. Mock the one hook we use rather than polyfill the global.
+jest.mock('react-router-dom', () => ({
+  useNavigate: () => jest.fn(),
+}));
+
 jest.mock('../lib/api', () => {
   return {
     postHomeworkHelpJson: jest.fn(),

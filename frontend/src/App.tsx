@@ -7,6 +7,7 @@ import { ExplanationPanel } from './components/ExplanationPanel';
 import { ProblemSelector } from './components/ProblemSelector';
 import { Homepage } from './components/Homepage';
 import { HomeworkSubmission } from './components/HomeworkSubmission';
+import { ProblemPage } from './components/ProblemPage';
 import { Navigation } from './components/Navigation';
 import { Login } from './components/Login';
 import { AdminPrompts } from './components/AdminPrompts';
@@ -171,14 +172,30 @@ export default function App() {
         <div className="min-h-screen bg-gray-50">
           <div className="bg-white border-b sticky top-0 z-50">
             <div className="container mx-auto px-6">
-              <Navigation 
-                onLogoClick={() => navigate('/')} 
+              <Navigation
+                onLogoClick={() => navigate('/')}
                 onHomeworkClick={() => navigate('/homework')}
                 onLogout={handleLogout}
               />
             </div>
           </div>
           <HomeworkSubmission onViewProblem={() => navigate('/practice')} />
+          <Toaster position="bottom-right" />
+        </div>
+      } />
+
+      <Route path="/homework/:problemId" element={
+        <div className="min-h-screen bg-gray-50">
+          <div className="bg-white border-b sticky top-0 z-50">
+            <div className="container mx-auto px-6">
+              <Navigation
+                onLogoClick={() => navigate('/')}
+                onHomeworkClick={() => navigate('/homework')}
+                onLogout={handleLogout}
+              />
+            </div>
+          </div>
+          <ProblemPage />
           <Toaster position="bottom-right" />
         </div>
       } />

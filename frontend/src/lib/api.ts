@@ -20,16 +20,30 @@ export type CommonErrorIn = {
   redirect_question: string;
 };
 
+export type Checkpoint = {
+  step_number: number;
+  expected_answer: string;
+};
+
 export type ClassifyAnswerReq = {
   attempt_id: string;
   step_number: number;
   raw_input: string;
   expected_answer: string;
   common_errors: CommonErrorIn[];
+  // Every step after the one the student typed into. Enables leap-ahead
+  // detection on the backend — when the student answers an earlier step's
+  // box with a downstream answer, the matching step is recognised and
+  // intermediate steps are marked skipped.
+  remaining_checkpoints?: Checkpoint[];
 };
 
 export type ClassifyAnswerRes = {
   is_correct: boolean;
+  // When is_correct is true, the step_number that was actually matched.
+  // Equal to req.step_number on a normal correct answer; greater when the
+  // student leapt ahead.
+  matched_step_number?: number | null;
   error_category?: string | null;
   redirect_question?: string | null;
   matched_pattern?: string | null;
@@ -40,6 +54,45 @@ export type LogEventReq = {
   event_type: string;
   step_number: number;
   payload?: Record<string, unknown>;
+};
+
+// ── Markup-feedback evaluation (phase 1) ────────────────────────────────
+
+export type FeedbackSegmentStatus = 'correct' | 'incomplete' | 'wrong' | 'unclear';
+
+export type FeedbackSegment = {
+  text: string;
+  status: FeedbackSegmentStatus;
+  comment?: string | null;
+};
+
+export type EvaluateMode = 'free' | 'guided';
+export type EvaluateTarget = 'main' | 'simpler';
+
+export type EvaluateReq = {
+  attempt_id: string;
+  problem_id: string;
+  submission: string;
+  mode?: EvaluateMode;
+  target?: EvaluateTarget;
+};
+
+export type EvaluateRes = {
+  is_correct: boolean;
+  feedback_segments: FeedbackSegment[];
+  prose_feedback?: string | null;
+  next_prompt?: string | null;
+};
+
+export type ProblemRes = {
+  problem_id: string;
+  user_id: string;
+  raw_input: string;
+  normalised_form: string;
+  topic_tags: string[];
+  difficulty: number;
+  ai_response: any;
+  created_at: string;
 };
 
 const DEFAULT_BACKEND_BASE = 'http://127.0.0.1:8001';
@@ -157,6 +210,29 @@ export async function logEvent(req: LogEventReq): Promise<void> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
   });
+}
+
+export async function getProblem(problemId: string): Promise<ProblemRes> {
+  const resp = await fetch(`${backendBaseUrl()}/api/v1/problems/${encodeURIComponent(problemId)}`);
+  if (!resp.ok) throw new Error(`getProblem failed (${resp.status})`);
+  return resp.json();
+}
+
+export async function evaluateSubmission(req: EvaluateReq): Promise<EvaluateRes> {
+  const resp = await fetch(`${backendBaseUrl()}/api/v1/homework/evaluate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  });
+  if (!resp.ok) {
+    let message = '';
+    try {
+      const data = await resp.json();
+      if (data?.detail) message = String(data.detail);
+    } catch { message = await resp.text().catch(() => ''); }
+    throw new Error(message || `evaluate failed (${resp.status})`);
+  }
+  return resp.json();
 }
 
 export async function postHomeworkHelpJson(req: HomeworkHelpJsonReq): Promise<HomeworkHelpJsonRes> {

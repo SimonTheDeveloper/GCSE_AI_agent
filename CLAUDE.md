@@ -141,6 +141,14 @@ cd frontend && npm test
 
 ---
 
+## Recording decisions
+
+When a non-trivial design or product decision is made — about architecture, data models, AI strategy, UX patterns, cost trade-offs, or anything else where the "why" isn't obvious from the code — add a file to `decisions/` following the template in [decisions/README.md](decisions/README.md).
+
+Do this whenever a decision is finalised, before or immediately after the related code lands.
+
+---
+
 ## Further reading
 
 - [docs/AGENT_CONTEXT.md](docs/AGENT_CONTEXT.md) — fuller agent guidance

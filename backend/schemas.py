@@ -120,31 +120,6 @@ class HomeworkHelpJsonRes(BaseModel):
     attempt_id: Optional[str] = None
 
 
-class CommonErrorIn(BaseModel):
-    '''A common error entry from the v2 AI response, sent by the client for classification.'''
-    category: str
-    pattern: str
-    wrong_answer_example: str
-    redirect_question: str
-
-
-class ClassifyAnswerReq(BaseModel):
-    '''Request schema for classifying a student's answer attempt.'''
-    attempt_id: str
-    step_number: int
-    raw_input: str
-    expected_answer: str
-    common_errors: List[CommonErrorIn]
-
-
-class ClassifyAnswerRes(BaseModel):
-    '''Response schema for answer classification.'''
-    is_correct: bool
-    error_category: Optional[str] = None
-    redirect_question: Optional[str] = None
-    matched_pattern: Optional[str] = None
-
-
 class LogEventReq(BaseModel):
     '''Request schema for logging a step event.'''
     attempt_id: str
@@ -155,6 +130,79 @@ class LogEventReq(BaseModel):
 
 class LogEventRes(BaseModel):
     ok: bool
+
+
+# ── Markup-feedback evaluation (phase 1 of the rebuilt engine) ──────────────
+
+
+class FeedbackSegment(BaseModel):
+    '''One segment of the student's submission, marked up by the evaluator.
+
+    Concatenating segment.text in order must equal the original submission
+    character-for-character — this is enforced before the response is sent
+    so the frontend can render aligned markup with confidence.
+    '''
+    text: str
+    # correct | incomplete | wrong | unclear
+    status: str
+    # Short explanation directed at the student. Null for routine "yes that's
+    # right" cases on correct segments where no comment adds value.
+    comment: Optional[str] = None
+
+
+class EvaluateReq(BaseModel):
+    '''Request schema for evaluating a freeform student submission.
+
+    `mode` controls whether the evaluator suggests a next prompt for the
+    student. In "guided" mode the response includes next_prompt; in "free"
+    mode the system stays out of the way and only marks up what was written.
+    Default is "free" for backwards compatibility with phase-1 callers.
+
+    `target` selects which canonical solution the submission is evaluated
+    against: "main" (the original problem) or "simpler" (the slim warm-up
+    variant stored on the Exercise via simpler_version). Default "main".
+    '''
+    attempt_id: str
+    problem_id: str
+    submission: str
+    mode: str = "free"  # "free" | "guided"
+    target: str = "main"  # "main" | "simpler"
+
+
+class EvaluateRes(BaseModel):
+    '''Response schema for evaluation.
+
+    On a cheap-path final-answer match: is_correct=True, no segments emitted —
+    the frontend renders a success state.
+
+    On the LLM path: is_correct=False (still working), feedback_segments
+    populated. If markup validation failed, prose_feedback carries a plain
+    string and feedback_segments stays empty.
+
+    next_prompt is populated only in guided mode, on the LLM path. It's a
+    short tutor-style suggestion for the student's next move.
+    '''
+    is_correct: bool
+    feedback_segments: List[FeedbackSegment] = []
+    prose_feedback: Optional[str] = None
+    next_prompt: Optional[str] = None
+
+
+class ProblemRes(BaseModel):
+    '''Response schema for fetching a stored problem by id.
+
+    Returns the canonical AI response payload (v2 shape) plus ownership and
+    metadata, so the frontend can render the problem and use the canonical
+    solution + milestones for the evaluation flow.
+    '''
+    problem_id: str
+    user_id: str
+    raw_input: str
+    normalised_form: str
+    topic_tags: List[str]
+    difficulty: int
+    ai_response: Dict[str, Any]
+    created_at: str
 
 class ProgressUpdateReq(BaseModel):
     topicId: str

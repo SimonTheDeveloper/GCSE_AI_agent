@@ -276,8 +276,71 @@ class GCSEHelpGenerator:
         except Exception:
             return None
 
+    def _followup_simpler_version(
+        self,
+        obj: Dict[str, Any],
+        *,
+        api_key: str,
+    ) -> Optional[Dict[str, Any]]:
+        """Fire a small focused LLM call to produce simpler_version.
+
+        Used when the main v3 generation dropped the field. Returns the
+        validated {question, solution, opening_prompt?} dict, or None on any
+        failure (LLM error, parse error, missing required fields). Failure
+        is non-fatal — caller leaves simpler_version absent and the
+        frontend disables the Simpler-version mode for this problem.
+        """
+        from gcse_help_prompts import (
+            SIMPLER_VERSION_SYSTEM_PROMPT,
+            render_simpler_version_user_prompt,
+        )
+
+        question = obj.get("normalised_form") or ""
+        solution = obj.get("full_solution") or ""
+        if not question or not solution:
+            return None
+
+        try:
+            openai = self._safe_import_openai()
+            if openai is None:
+                return None
+            client = openai.OpenAI(api_key=api_key)  # type: ignore[attr-defined]
+            resp = client.chat.completions.create(
+                model=self._config.model,
+                messages=[
+                    {"role": "system", "content": SIMPLER_VERSION_SYSTEM_PROMPT},
+                    {
+                        "role": "user",
+                        "content": render_simpler_version_user_prompt(question, solution),
+                    },
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.2,
+                max_tokens=600,
+            )
+            text = (resp.choices[0].message.content or "").strip()
+            parsed = json.loads(text)
+        except Exception:
+            logger.exception("gcse_help_generator: simpler_version follow-up call failed")
+            return None
+
+        if not isinstance(parsed, dict):
+            return None
+        q = parsed.get("question")
+        s = parsed.get("solution")
+        if not (isinstance(q, str) and q.strip() and isinstance(s, str) and s.strip()):
+            return None
+
+        result: Dict[str, Any] = {"question": q.strip(), "solution": s.strip()}
+        op = parsed.get("opening_prompt")
+        if isinstance(op, str) and op.strip():
+            result["opening_prompt"] = op.strip()
+        return result
+
     def _light_validate_response(self, obj: dict, schema_version: str = "1.0.0") -> None:
-        if schema_version == "2.0.0":
+        if schema_version == "3.0.0":
+            self._validate_v3_response(obj)
+        elif schema_version == "2.0.0":
             self._validate_v2_response(obj)
         else:
             self._validate_v1_response(obj)
@@ -299,6 +362,71 @@ class GCSEHelpGenerator:
         nt = obj.get("exercise", {}).get("prompt", {}).get("normalized_text")
         if not nt or not isinstance(nt, str):
             raise GCSEHelpError("exercise.prompt.normalized_text missing or invalid")
+
+    def _validate_v3_response(self, obj: dict) -> None:
+        # The v3 prompt asks for many fields. The model intermittently drops
+        # different ones across generations (see known-issues). Rather than
+        # play whack-a-mole, we strict-require only the fields the renderer
+        # genuinely cannot work without; everything else degrades gracefully
+        # in the frontend or the evaluator and is logged as a warning here
+        # so the issue stays visible.
+
+        # Hard requirements: without these, the page can't render or the
+        # evaluator can't ground its LLM call against a canonical solution.
+        for f in ("normalised_form", "full_solution"):
+            if not isinstance(obj.get(f), str) or not obj[f].strip():
+                raise GCSEHelpError(f"v3 response missing or invalid field: {f}")
+
+        # Optional but desirable fields — log when missing so the known-issue
+        # has data on which fields drop most often.
+        if not isinstance(obj.get("opening_prompt"), str) or not obj["opening_prompt"].strip():
+            logger.warning(
+                "gcse_help_generator: v3 response missing opening_prompt — "
+                "frontend will use generic fallback"
+            )
+
+        milestones = obj.get("milestone_answers")
+        if milestones is None:
+            logger.warning(
+                "gcse_help_generator: v3 response missing milestone_answers — "
+                "cheap-path final-answer matching will not fire for this problem"
+            )
+        elif not isinstance(milestones, list):
+            raise GCSEHelpError("v3 milestone_answers must be a list when present")
+        else:
+            for m in milestones:
+                if not isinstance(m, str) or not m.strip():
+                    raise GCSEHelpError(
+                        "v3 milestone_answers entries must be non-empty strings"
+                    )
+
+        sv = obj.get("simpler_version")
+        if sv is None:
+            logger.warning(
+                "gcse_help_generator: v3 response missing simpler_version — "
+                "Simpler-version mode will be disabled for this problem"
+            )
+        elif not isinstance(sv, dict):
+            raise GCSEHelpError("v3 simpler_version must be an object when present")
+        else:
+            for f in ("question", "solution"):
+                if not isinstance(sv.get(f), str) or not sv[f].strip():
+                    raise GCSEHelpError(
+                        f"v3 simpler_version.{f} must be a non-empty string when simpler_version is present"
+                    )
+            sv_op = sv.get("opening_prompt")
+            if sv_op is not None and not isinstance(sv_op, str):
+                raise GCSEHelpError("v3 simpler_version.opening_prompt must be a string if present")
+
+        eib = obj.get("explain_it_back")
+        if eib is None:
+            logger.warning(
+                "gcse_help_generator: v3 response missing explain_it_back"
+            )
+        elif not isinstance(eib, dict):
+            raise GCSEHelpError("v3 explain_it_back must be an object when present")
+        # We don't strictly validate explain_it_back's contents — the frontend
+        # doesn't render it currently, and the model is often inconsistent.
 
     def _validate_v2_response(self, obj: dict) -> None:
         for field in ["normalised_form", "steps", "full_solution", "explain_it_back"]:
@@ -386,8 +514,16 @@ class GCSEHelpGenerator:
             raise GCSEHelpError("No exercise text provided")
 
         prompt_version, system, user_template = self._get_prompts()
-        # v2 prompt (version >= 2) produces a different output shape — use a separate cache namespace
-        effective_schema_version = "2.0.0" if prompt_version >= 2 else self._config.schema_version
+        # Each prompt version produces a different output shape — schema_version
+        # is part of the cache key, so cached entries don't collide across
+        # generations. v3 drops steps[] and adds simpler_version; v2 has the
+        # per-step structure; v1 is the legacy tiers shape.
+        if prompt_version >= 3:
+            effective_schema_version = "3.0.0"
+        elif prompt_version >= 2:
+            effective_schema_version = "2.0.0"
+        else:
+            effective_schema_version = self._config.schema_version
         key = exercise_hash(
             normalized_text,
             schema_version=effective_schema_version,
@@ -415,6 +551,11 @@ class GCSEHelpGenerator:
                         key_short,
                         int((time.perf_counter() - cache_start) * 1000),
                     )
+                    # Older cached entries were written before _schema_version
+                    # was attached. Repair on read so the v2 dispatch in main.py
+                    # (which gates problem/attempt persistence on this field)
+                    # works for problems that were cached pre-fix.
+                    cached.setdefault("_schema_version", effective_schema_version)
                     return cached
                 logger.info(
                     "gcse_help_generator.cache_miss backend=dynamodb key=%s ms=%d",
@@ -426,6 +567,7 @@ class GCSEHelpGenerator:
                     cached = self._cache[key]
                     if isinstance(cached, dict):
                         logger.info("gcse_help_generator.cache_hit backend=json key=%s", key_short)
+                        cached.setdefault("_schema_version", effective_schema_version)
                         return cached
                 logger.info("gcse_help_generator.cache_miss backend=json key=%s", key_short)
 
@@ -568,6 +710,24 @@ class GCSEHelpGenerator:
             logger.exception("gcse_help_generator.validation_failed key=%s", key_short)
             raise
 
+        # Repair: when the v3 main generation drops simpler_version, fire a
+        # focused follow-up call to fill it in. Caching happens after the
+        # repair so the merged response is what gets stored. See
+        # known-issues/2026-05-02-v3-prompt-drops-milestone-answers.md.
+        if effective_schema_version == "3.0.0" and not _has_valid_simpler_version(obj):
+            filled = self._followup_simpler_version(obj, api_key=api_key)
+            if filled is not None:
+                obj["simpler_version"] = filled
+                logger.info(
+                    "gcse_help_generator: filled missing simpler_version via follow-up call key=%s",
+                    key_short,
+                )
+
+        # Attach schema version BEFORE the cache write so cached entries
+        # carry the field too — main.py's v2 dispatch (problem/attempt
+        # persistence) reads this on every response, including cache hits.
+        obj["_schema_version"] = effective_schema_version
+
         if use_cache:
             if self._config.cache_backend == "dynamodb":
                 self._dynamo_put(key, normalized_text=normalized_text, result=obj)
@@ -580,9 +740,20 @@ class GCSEHelpGenerator:
             effective_schema_version,
             int((time.perf_counter() - start) * 1000),
         )
-        # Attach schema version so callers can dispatch without inspecting the shape
-        obj["_schema_version"] = effective_schema_version
         return obj
+
+def _has_valid_simpler_version(obj: Dict[str, Any]) -> bool:
+    """True iff obj.simpler_version is shaped well enough to render."""
+    sv = obj.get("simpler_version")
+    if not isinstance(sv, dict):
+        return False
+    q = sv.get("question")
+    s = sv.get("solution")
+    return (
+        isinstance(q, str) and bool(q.strip())
+        and isinstance(s, str) and bool(s.strip())
+    )
+
 
 def convert_floats_to_decimal(obj: Any) -> Any:
     """Recursively convert all float values to Decimal for DynamoDB compatibility."""

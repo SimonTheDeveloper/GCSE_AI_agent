@@ -166,7 +166,7 @@ def recent_wrong_cards(uid: str, limit_results: int = 10) -> Dict[str, set]:
     return topic_to_cards
 
 # Prompts
-KNOWN_PROMPT_IDS = ["ingestion", "similar", "score", "classify"]
+KNOWN_PROMPT_IDS = ["ingestion", "similar", "score", "classify", "evaluation"]
 
 
 def _prompt_version_sk(version: int) -> str:
